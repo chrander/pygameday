@@ -1,0 +1,4 @@
+*.pyc
+*.idea
+config_mine.py
+logs
