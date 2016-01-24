@@ -6,9 +6,6 @@ GameDay data into a database
 Pygameday was developed and tested using Python 2.7. It may run 
 with Python 3, but this has yet to be confirmed.
 
-For now, clone the repository or download the zip. Making pygameday 
-installable with `pip` is on the TODO list.
-
 The full dependency list is given in `requirements.txt`.
 The dependencies include:
 * sqlalchemy
