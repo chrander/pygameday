@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Defines classes for database mappings, plus some database helper functions
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -47,7 +47,6 @@ def create_db_tables(engine):
 
 
 class Game(BASE):
-    """"""
     __tablename__ = 'games'
 
     game_id = Column(Integer, Sequence('game_id_seq'), primary_key=True)

@@ -1,31 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 import os
+import sys
 import logging
 from datetime import datetime
 from dateutil import parser
 
-import constants
+from pygameday import constants
 
+logger = logging.getLogger("pygameday")
 
-DATE_STRING_FORMAT = "%Y-%m-%d"  # This controls how Don't change this until you understand the consequences
+def configure_logging(log_name, log_to_file=False):
 
+    logger = logging.getLogger(log_name)
+    log_level = logging.DEBUG
+    logger.setLevel(log_level)
+    logger.propagate = 0
 
-def init_logging(log_to_file=False):
-    """ Initializes logging functionality
+    # Set handlers
+    # Keep track of handlers by name so we don't initialize handlers multiple times
+    handler_names = [h.get_name() for h in logger.handlers]
 
-    Most logging properties are set in constants.py
-    """
-
-    logger = logging.getLogger("pygameday")
-    logger.setLevel(constants.LOG_LEVEL)
-
-    # Set up log formatting
-    formatter = logging.Formatter(constants.LOG_FORMAT)
-
-    if log_to_file:
+    # Set up a handler to log to file
+    if log_to_file and "FileHandler" not in handler_names:
         # First create the log folder if it doesn't exist
         if not os.path.exists(constants.LOG_FOLDER):
             os.mkdir(constants.LOG_FOLDER)
@@ -34,17 +33,50 @@ def init_logging(log_to_file=False):
         today = datetime.now()
         log_file_name = "pygameday_{:4d}-{:2d}-{:2d}.log".format(today.year, today.month, today.day)
         fh = logging.FileHandler(os.path.join(constants.LOG_FOLDER, log_file_name))
-        fh.setLevel(constants.LOG_LEVEL)
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
+        fh.set_name("FileHandler")
+        fh.setLevel(log_level)
+        file_formatter = logging.Formatter(constants.LOG_FORMAT_FILE, constants.LOG_FORMAT_TIME)
+        fh.setFormatter(file_formatter)
 
     # Set up a handler to log to console
-    ch = logging.StreamHandler()
-    ch.setLevel(constants.LOG_LEVEL)  # Can set a different console logging level here
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    if "StreamHandler" not in handler_names:
+        ch = logging.StreamHandler()
+        ch.set_name("StreamHandler")
+        ch.setLevel(log_level)  # Can set a different console logging level here
+        console_formatter = logging.Formatter(constants.LOG_FORMAT_CONSOLE, constants.LOG_FORMAT_TIME)
+        ch.setFormatter(console_formatter)
+        logger.addHandler(ch)
 
 
-def parse_date_string(date_string):
-    date = parser.parse(date_string)
-    return date
+def set_logging_level(level):
+    """Sets the logging level
+
+    Parameters
+    ----------
+    level : str
+        String corresponding to a valid logging level.
+        Acceptable values: NOTSET, DEBUG, WARN, INFO, ERROR, CRITICAL
+    """
+    logger = logging.getLogger("pygameday")
+    logger.setLevel(logging.getLevelName(level))
+
+
+def validate_date(date):
+    if type(date) == datetime:
+        return date
+
+    elif type(date) == str:
+        try:
+            date = parser.parse(date)
+
+        except ValueError:
+            msg = "Invalid date: {}. Aborting.".format(date)
+            logger.critical(msg)
+            sys.exit(1)
+
+        return date
+
+    else:
+        msg = "Invalid date: {}. Aborting.".format(date)
+        logger.critical(msg)
+        sys.exit(1)

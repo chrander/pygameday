@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 """Defines functionality for parsing MLB GameDay data from web content into database classes
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 import logging
 
 from dateutil import parser
 from lxml import etree
 
-from models import AtBat
-from models import Game
-from models import HitInPlay
-from models import Pitch
-from models import Player
+from pygameday.models import AtBat
+from pygameday.models import Game
+from pygameday.models import HitInPlay
+from pygameday.models import Pitch
+from pygameday.models import Player
 
-LOG = logging.getLogger("pygameday.parse")
+LOG = logging.getLogger("pygameday")
 
 
 def parse_epg(epg_page):

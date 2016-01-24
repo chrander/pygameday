@@ -2,14 +2,37 @@
 # -*- coding: utf-8 -*-
 """Provides functionality for scraping MLB GameDay data from the GameDay website
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 import requests
 import logging
 
-from constants import GD_SERVER
-from constants import GD_BASE_PATH
+from pygameday.constants import GD_SERVER
+from pygameday.constants import GD_BASE_PATH
 
-LOG = logging.getLogger("pygameday.scrape")
+logger = logging.getLogger("pygameday")
+
+
+def get_url(url):
+    """Fetches a URL, returning the page content
+
+    Parameters
+    ----------
+    url : str
+        The URL to get
+
+    Returns
+    -------
+    requests response
+        The requests page corresonding to the URL
+    """
+    logger.debug('Fetching URL: {}'.format(url))
+    page = requests.get(url)
+
+    if page.status_code != 200:
+        logger.error('Error fetching {}'.format(url))
+        return None
+
+    return page
 
 
 def fetch_epg(year, month, day):
@@ -31,17 +54,8 @@ def fetch_epg(year, month, day):
         place on the given day.
 
     """
-    url = "{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml" \
-        .format(GD_SERVER, GD_BASE_PATH, year, month, day)
-
-    LOG.debug('Fetching epg.xml URL: {}'.format(url))
-    page = requests.get(url)
-
-    if page.status_code != 200:
-        LOG.error('Error fetching {}'.format(url))
-        return None
-
-    return page
+    url = "{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH, year, month, day)
+    return get_url(url)
 
 
 def fetch_inning_all(game_directory):
@@ -61,15 +75,7 @@ def fetch_inning_all(game_directory):
 
     """
     url = GD_SERVER + game_directory + '/inning/inning_all.xml'
-
-    LOG.debug('Fetching inning_all.xml URL: {}'.format(url))
-    page = requests.get(url)
-
-    if page.status_code != 200:
-        LOG.error('Error fetching {}'.format(url))
-        return None
-
-    return page
+    return get_url(url)
 
 
 def fetch_hit_chart(game_directory):
@@ -89,14 +95,7 @@ def fetch_hit_chart(game_directory):
 
     """
     url = GD_SERVER + game_directory + '/inning/inning_hit.xml'
-    LOG.debug('Fetching inning_hit.xml URL: {}'.format(url))
-    page = requests.get(url)
-
-    if page.status_code != 200:
-        LOG.error('Error fetching {}'.format(url))
-        return None
-
-    return page
+    return get_url(url)
 
 
 def fetch_players(game_directory):
@@ -115,16 +114,8 @@ def fetch_players(game_directory):
         XML-formatted data containing player data.
 
     """
-
     url = GD_SERVER + game_directory + '/players.xml'
-    LOG.debug('Fetching players.xml URL: {}'.format(url))
-    page = requests.get(url)
-
-    if page.status_code != 200:
-        LOG.error('Error fetching {}'.format(url))
-        return None
-
-    return page
+    return get_url(url)
 
 
 def save_page(page, filename):

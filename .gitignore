@@ -1,4 +1,17 @@
+# Byte-conpiled files
 *.pyc
-*.idea
+
+# Databases, especially sqlite
+*.db
+*.sqlite
+
+# Configuration files containing potentially sensitive data (such as database user names and passwords)
 config_mine.py
-logs
+
+# Logging
+logs/
+*.log
+
+# IDE stuff
+*.idea
+.ipynb_checkpoints/

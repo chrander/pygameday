@@ -2,28 +2,28 @@
 # -*- coding: utf-8 -*-
 """Defines GameDayClient, the primary class for scraping, parsing, and ingesting MLB GameDay data.
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 import logging
-from datetime import datetime
 from datetime import timedelta
+from dateutil import parser
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-import util
-import parse
-import scrape
-from models import Game
-from models import Player
-from models import AtBat
-from models import Pitch
-from models import HitInPlay
-from models import create_db_tables
-from models import db_connect
+import pygameday.util as util
+import pygameday.parse as parse
+import pygameday.scrape as scrape
+from pygameday.models import Game
+from pygameday.models import Player
+from pygameday.models import AtBat
+from pygameday.models import Pitch
+from pygameday.models import HitInPlay
+from pygameday.models import create_db_tables
+from pygameday.models import db_connect
 
-LOG = logging.getLogger("pygameday.ingest")
+logger = logging.getLogger("pygameday")
 
 
 class GameDayClient(object):
@@ -31,7 +31,7 @@ class GameDayClient(object):
 
     Database parameters are defined in config.py.
     """
-    def __init__(self, database_uri, ingest_spring_training=False):
+    def __init__(self, database_uri, ingest_spring_training=False, log_level="INFO"):
         """Constructor
 
         Initializes database connection and session
@@ -49,12 +49,16 @@ class GameDayClient(object):
 
         ingest_spring_training : bool
             Whether to ingest spring training games. [Default: False]
+
+        log_level : str
+            The logging level. Must be one of NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL [Default: "INFO"]
         """
+        util.set_logging_level(log_level)
+
         engine = db_connect(database_uri)
         create_db_tables(engine)
         self.Session = sessionmaker(bind=engine)
-
-        util.init_logging()
+        logger.info("Initialized GameDayClient using '{}'".format(database_uri))
 
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training
@@ -88,7 +92,6 @@ class GameDayClient(object):
         print("======================")
         print("")
 
-
     def update_inserted_data(self):
         """Updates the set of player IDs and Game GameDay IDs that already exist in the database
 
@@ -100,7 +103,7 @@ class GameDayClient(object):
         self.gameday_ids = {gid[0] for gid in session.query(Game.gameday_id)}
         self.player_ids = {pid[0] for pid in session.query(Player.player_id)}
 
-        LOG.info("There are currently {} games and {} players in the database".format(
+        logger.debug("There are currently {} games and {} players in the database".format(
                 len(self.gameday_ids), len(self.player_ids)))
 
     def process_date_range(self, start_date, end_date):
@@ -112,10 +115,14 @@ class GameDayClient(object):
         ----------
         start_date: datetime.date object
             The first date to process.
+            Can also be a string, in which case the function will parse it into a datetime object.
 
         end_date: datetime.date object
             The final date to process.
+            Can also be a string, in which case the function will parse it into a datetime object.
         """
+        start_date = util.validate_date(start_date)  # Ensure dates are datetime objects
+        end_date = util.validate_date(end_date)
 
         if end_date < start_date:
             tmp = end_date
@@ -124,34 +131,33 @@ class GameDayClient(object):
 
         date_range = (end_date - start_date).days + 1  # Add 1 so the range is inclusive of begin_date and end_date
 
-        msg = "Ingesting GameDay data within date range {} to {}".format(start_date, end_date)
-        LOG.info(msg)
+        msg = "Ingesting GameDay data within date range {} to {}".format(start_date.date(), end_date.date())
+        logger.info(msg)
 
         for day in xrange(date_range):
             date = start_date + timedelta(day)
-            self.process_day(date.year, date.month, date.day)
+            self.process_date(date)
 
-    def process_day(self, year, month, day):
+    def process_date(self, date):
         """Ingests one day of GameDay data
 
         Parameters
         ----------
-        year : int
-        month : int
-        day : int
-
+        date : datetime.date object
+            The date to process
+            Can also be a string, in which case the function will parse it into a datetime object.
         """
-        epg_page = scrape.fetch_epg(year, month, day)
+        date = util.validate_date(date)  # Ensure date is a datetime object
+        epg_page = scrape.fetch_epg(date.year, date.month, date.day)
 
         if epg_page is None:
-            msg = "No games found on {}-{}-{}".format(year, month, day)
-            LOG.info(msg)
+            msg = "No games found on {}".format(date.date())
+            logger.warn(msg)
 
         else:
             game_xml_nodes = parse.parse_epg(epg_page)
-            msg = "Processing {} games on {}-{}-{}".format(
-                    len(game_xml_nodes), year, month, day)
-            LOG.info(msg)
+            msg = "Processing {} games on {}".format(len(game_xml_nodes), date.date())
+            logger.info(msg)
 
             for game in game_xml_nodes:
                 self.process_game(game)
@@ -171,7 +177,7 @@ class GameDayClient(object):
 
         if gameday_id in self.gameday_ids:
             # The game has been processed and should already be in the database
-            LOG.info("Skipping game: {} because it has already been processed.".format(gameday_id))
+            logger.warn("Skipping game: {}. It's already in the DB.".format(gameday_id))
             return
 
         # Parse the game
@@ -179,19 +185,19 @@ class GameDayClient(object):
 
         # If no data comes back, the game probably wasn't a Final. Abort.
         if db_game is None:
-            msg = ("Game ID {} was not ingested because it contained no data, "
+            msg = ("Skipping game: {}. It contained no data, "
                    "probably because its status isn't Final").format(gameday_id)
-            LOG.info(msg)
+            logger.warn(msg)
             return
 
         # If the game is a spring training game, skip it if ingest_spring_training is False
         if not self.ingest_spring_training and db_game.game_type == "S":
-            msg = ("Game ID {} was skipped because it's a spring training game.").format(gameday_id)
-            LOG.info(msg)
+            msg = "Skipping game: {}. It's a spring training game.".format(gameday_id)
+            logger.warn(msg)
             return
 
         msg = "Processing game ID {}".format(gameday_id)
-        LOG.info(msg)
+        logger.info(msg)
 
         # --------------------------------------------------------------------------------------------------------------
         # Fetch game data
@@ -203,13 +209,13 @@ class GameDayClient(object):
         # do some error checking
         if hit_chart_page is None:
             msg = "Error fetching hit chart page for game {}".format(gameday_id)
-            LOG.error(msg)
+            logger.error(msg)
         if players_page is None:
             msg = "Error fetching players page for game {}".format(gameday_id)
-            LOG.error(msg)
+            logger.error(msg)
         if inning_all_page is None:
             msg = "Error fetching inning events page for game {}".format(gameday_id)
-            LOG.error(msg)
+            logger.error(msg)
 
         # --------------------------------------------------------------------------------------------------------------
         # Parse AtBats (including Pitches), HitsInPlay, Players
@@ -242,7 +248,7 @@ class GameDayClient(object):
 
             if int(player.player_id) in self.player_ids:
                 # The player has been processed and should already be in the database
-                LOG.debug("Skipping player: {} because it has already been processed.".format(player.player_id))
+                logger.debug("Skipping player: {} because it has already been processed.".format(player.player_id))
 
             else:
                 # We haven't inserted this player yet
@@ -258,13 +264,13 @@ class GameDayClient(object):
                     session.rollback()
                     msg = ("IntegrityError when inserting player: {}, "
                            "probably because it's already in the database".format(str(player)))
-                    LOG.error(msg)
+                    logger.error(msg)
                     error_occurred = True
 
                 except Exception as ex:
                     # Just log other exceptions for now, and continue
                     session.rollback()
-                    LOG.error(str(ex))
+                    logger.error(str(ex))
                     error_occurred = True
 
                 if not error_occurred:
@@ -275,7 +281,7 @@ class GameDayClient(object):
         #
         if db_game.gameday_id in self.gameday_ids:
             # The game has been processed and should already be in the database
-            LOG.info("Skipping game: {} because it has already been ingested.".format(db_game.gameday_id))
+            logger.info("Skipping game: {} because it has already been ingested.".format(db_game.gameday_id))
 
         else:
             # We haven't inserted this game yet
@@ -291,13 +297,13 @@ class GameDayClient(object):
                 session.rollback()
                 msg = ("IntegrityError when inserting game: {}, "
                        "probably because it's already in the database".format(db_game.gameday_id))
-                LOG.error(msg)
+                logger.error(msg)
                 error_occurred = True
 
             except Exception as ex:
                 # Just log other exceptions for now, and continue
                 session.rollback()
-                LOG.error(str(ex))
+                logger.error(str(ex))
                 error_occurred = True
 
             if not error_occurred:
@@ -311,21 +317,20 @@ class GameDayClient(object):
 # Unit tests
 #
 def test_single_day():
-    year = 2015
-    month = 5
-    day = 29
-
     import config
+    date_string = "2015-06-07"
+    date = parser.parse(date_string)
+
     ingester = GameDayClient(config.DATABASE_URI)
-    ingester.process_day(year, month, day)
+    ingester.process_date(date)
 
 
 def test_date_range():
     start_date_string = "2015-06-07"
     end_date_string = "2015-06-07"
 
-    start_date = datetime.strptime(start_date_string, "%Y-%m-%d").date()
-    end_date = datetime.strptime(end_date_string, "%Y-%m-%d").date()
+    start_date = parser.parse(start_date_string)
+    end_date = parser.parse(end_date_string)
 
     import config
     ingester = GameDayClient(config.DATABASE_URI)
@@ -333,8 +338,4 @@ def test_date_range():
 
 
 if __name__ == "__main__":
-    from util import init_logging
-    init_logging(log_to_file=True)
-
-    # test_single_day()
-    test_date_range()
+    pass

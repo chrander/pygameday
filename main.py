@@ -4,19 +4,20 @@
 
 See the usage() function for how to call this script
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 
 import sys
-from dateutil import parser
 
-from pygameday.pygameday import GameDayClient
+from pygameday import GameDayClient
 
 try:
-    # Look for Database URI in config_mine.py first. (This config file is not version controlled)
+    # Look for Database URI in config_mine.py first.
+    # config_mine.py should not be version controlled, because it can contain username/password information.
+    # config.py, a default config file, is version controlled. It should not have any usernames, passwords, or other
+    # potentially sensitive information.
     from config_mine import DATABASE_URI
 except ImportError:
     from config import DATABASE_URI
-
 
 
 def run():
@@ -27,24 +28,16 @@ def run():
     """
     if len(sys.argv) > 2:
         # Both a start date and an end date are specified
-        start_date_string = sys.argv[1]
-        end_date_string = sys.argv[2]
+        start_date = sys.argv[1]
+        end_date = sys.argv[2]
 
     elif len(sys.argv) == 2:
         # Only a single date is specified; use it as start and end date
-        start_date_string = sys.argv[1]
-        end_date_string = sys.argv[1]
+        start_date = sys.argv[1]
+        end_date = sys.argv[1]
 
     else:
         usage()
-        sys.exit(1)
-
-    try:
-        start_date = parser.parse(start_date_string)
-        end_date = parser.parse(end_date_string)
-    except:
-        print("  Unable to parse dates: {}, {}".format(start_date_string, end_date_string))
-        print("  Check your input dates and try again.")
         sys.exit(1)
 
     client = GameDayClient(DATABASE_URI)
