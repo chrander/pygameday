@@ -29,7 +29,7 @@ It should be noted that I've tested only SQLite and Postgres.
 ## Installation
 Install pygameday using `pip`:
 
-```
+```python
 pip install pygameday
 ```
 
@@ -46,19 +46,19 @@ specify the database URI. This example creates an SQLite database
 named `gameday.db` in the current directory, but you can substitute
 a URI for your database flavor of choice.
 
-```
+```python
 from pygameday import GameDayClient
 database_uri = "sqlite"///gameday.db"
 client = GameDayClient(database_uri)
 ```
 
 Ingest games that occurred on a single day by specifying a date.
-```
+```python
 client.process_date("2015-05-01")  # Ingest games on May 1, 2015
 ```
 
 You can also ingest games within a date range.
-```
+```python
 # Ingest games between May 1, 2015 and May 3, 2015
 client.process_date_range("2015-05-01", "2015-05-03)
 ```
@@ -66,7 +66,7 @@ client.process_date_range("2015-05-01", "2015-05-03)
 After ingesting data, use any tool you like to verify that the 
 data is in the database. Here's an example using [pandas](http://pandas.pydata.org/).
 
-```
+```python
 import pandas as pd
 from sqlalchemy import create_engine
 engine = create_engine(database_uri)
@@ -104,14 +104,14 @@ $ python main.py 2015-05-31 2015-06-02
 You only need to specify the URI for the database for pygameday to work.
 Here are some example URIs.
 
-SQLite: 
-    `"sqlite:///example.db"  # File in the current directory`
-    `"sqlite:////absolute/path/to/example.db"  # Absolute path to file (Unix/Mac)`
-    `"sqlite:///C:\absolute\path\to\example.db"  # Absolute path to file (Unix/Mac)`
+**SQLite**: 
+* `"sqlite:///example.db"  # File in the current directory`
+* `"sqlite:////absolute/path/to/example.db"  # Absolute path to file (Unix/Mac)`
+* `"sqlite:///C:\absolute\path\to\example.db"  # Absolute path to file (Unix/Mac)`
 
-PostgreSQL:
-    `"postgresql://user:password@host/database_name"  # Standard Postgres dialect`
-    `"psycopg2+postgresql://user:password@host/database_name"  # with psycopg2 driver`
+**PostgreSQL**:
+* `"postgresql://user:password@host/database_name"  # Standard Postgres dialect`
+* `"psycopg2+postgresql://user:password@host/database_name"  # with psycopg2 driver`
 
 SQLAlchemy's [engine documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html)
 has additional details about the dialects it supports.
