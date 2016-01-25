@@ -15,3 +15,7 @@ logs/
 # IDE stuff
 *.idea
 .ipynb_checkpoints/
+
+# Distribution stuff
+dist/
+MANIFEST
