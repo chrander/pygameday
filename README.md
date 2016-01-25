@@ -1,5 +1,5 @@
 # pygameday
-Pygameday scrapes Major League Baseball's [GameDay](http://mlb.mlb.com/mlb/gameday/#) 
+Pygameday scrapes Major League Baseball (MLB) [GameDay](http://mlb.mlb.com/mlb/gameday/#) 
 data, parses it, and inserts it into a database of your choosing for 
 later analysis.
 
