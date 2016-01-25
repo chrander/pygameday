@@ -48,7 +48,7 @@ a URI for your database flavor of choice.
 
 ```python
 from pygameday import GameDayClient
-database_uri = "sqlite"///gameday.db"
+database_uri = "sqlite:///gameday.db"
 client = GameDayClient(database_uri)
 ```
 
@@ -107,7 +107,7 @@ Here are some example URIs.
 **SQLite**: 
 * `"sqlite:///example.db"  # File in the current directory`
 * `"sqlite:////absolute/path/to/example.db"  # Absolute path to file (Unix/Mac)`
-* `"sqlite:///C:\absolute\path\to\example.db"  # Absolute path to file (Unix/Mac)`
+* `"sqlite:///C:\absolute\path\to\example.db"  # Absolute path to file (Windows)`
 
 **PostgreSQL**:
 * `"postgresql://user:password@host/database_name"  # Standard Postgres dialect`
