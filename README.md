@@ -60,7 +60,7 @@ client.process_date("2015-05-01")  # Ingest games on May 1, 2015
 You can also ingest games within a date range.
 ```python
 # Ingest games between May 1, 2015 and May 3, 2015
-client.process_date_range("2015-05-01", "2015-05-03)
+client.process_date_range("2015-05-01", "2015-05-03")
 ```
 
 After ingesting data, use any tool you like to verify that the 
