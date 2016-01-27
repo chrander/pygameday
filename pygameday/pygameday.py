@@ -191,8 +191,8 @@ class GameDayClient(object):
             return
 
         # If the game is a spring training game, skip it if ingest_spring_training is False
-        if not self.ingest_spring_training and db_game.game_type == "S":
-            msg = "Skipping game: {}. It's a spring training game.".format(gameday_id)
+        if not self.ingest_spring_training and (db_game.game_type == "S" or db_game.game_type == "E"):
+            msg = "Skipping game: {}. It's a spring training or exhibition game.".format(gameday_id)
             logger.warn(msg)
             return
 
