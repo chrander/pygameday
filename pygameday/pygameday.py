@@ -134,7 +134,7 @@ class GameDayClient(object):
         msg = "Ingesting GameDay data within date range {} to {}".format(start_date.date(), end_date.date())
         logger.info(msg)
 
-        for day in xrange(date_range):
+        for day in range(date_range):
             date = start_date + timedelta(day)
             self.process_date(date)
 

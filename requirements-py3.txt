@@ -1,0 +1,22 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+libxml2=2.9.2=0
+libxslt=1.1.28=0
+lxml=3.5.0=py35_0
+mysql=5.5.24=0
+openssl=1.0.1k=1
+pip=8.0.2=py35_0
+psycopg2=2.6.1=py35_0
+python=3.5.0=0
+python-dateutil=2.4.2=py35_0
+readline=6.2=2
+requests=2.9.1=py35_0
+setuptools=19.6.2=py35_0
+six=1.10.0=py35_0
+sqlalchemy=1.0.11=py35_0
+sqlite=3.9.2=0
+tk=8.5.18=0
+wheel=0.26.0=py35_1
+xz=5.0.5=0
+zlib=1.2.8=0
