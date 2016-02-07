@@ -3,15 +3,16 @@
 from __future__ import print_function, division
 
 from dateutil import parser
-from pygameday.pygameday import GameDayClient
-import config
+from pygameday import GameDayClient
 
 
 def test_ingest():
-    start_date = parser.parse("2015-03-31")
-    end_date = parser.parse("2015-03-31")
+    start_date = parser.parse("2015-04-30")
+    end_date = parser.parse("2015-04-30")
 
-    client = GameDayClient(config.DATABASE_URI)
+    database_uri = "sqlite:///gameday.db"
+
+    client = GameDayClient(database_uri)
     client.db_stats()
     client.process_date_range(start_date, end_date)
     client.db_stats()

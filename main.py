@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Main command-line script for ingesting MLB GameDay data
+"""Command-line script for ingesting MLB GameDay data
 
 See the usage() function for how to call this script
 """
