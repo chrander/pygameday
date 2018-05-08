@@ -8,7 +8,7 @@ import logging
 from .constants import GD_SERVER
 from .constants import GD_BASE_PATH
 
-logger = logging.getLogger("pygameday")
+logger = logging.getLogger('pygameday')
 
 
 def get_url(url):
@@ -27,24 +27,43 @@ def get_url(url):
     logger.debug('Fetching URL: {}'.format(url))
     page = requests.get(url)
 
-    if page.status_code != 200:
+    if not page.ok:
         logger.error('Error fetching {}'.format(url))
         return None
 
     return page
 
 
-def fetch_epg(year, month, day):
+def fetch_master_scoreboard(date):
+    """Fetch the master scoreboard page containing of games on a given day
+
+    Parameters
+    ----------
+    date : datetime.datetime
+        The day to fetch
+
+    Returns
+    -------
+    dict
+        Dictionary of games data on the given day
+    """
+    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/master_scoreboard.json".format(GD_SERVER, GD_BASE_PATH,
+                                                                                        date.year, date.month, date.day)
+    response = requests.get(url)
+    if response.ok:
+        return response.json()
+    else:
+        logger.error('Error fetching URL {}'.format(url))
+        return None
+
+
+def fetch_epg(date):
     """Fetch epg.xml (possibly stands for "event page"?) for a given day
 
     Parameters
     ----------
-    year : int
-        The year that the events took place
-    month : int
-        The month that the events took place
-    day : int
-        The day that the events took place
+    date : datetime.datetime
+        The day to fetch
 
     Returns
     -------
@@ -53,7 +72,8 @@ def fetch_epg(year, month, day):
         place on the given day.
 
     """
-    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH, year, month, day)
+    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH,
+                                                                         date.year, date.month, date.day)
     return get_url(url)
 
 
@@ -117,18 +137,18 @@ def fetch_players(game_directory):
     return get_url(url)
 
 
-def save_page(page, filename):
+def save_page(page, file_path):
     """Save page content to disk
 
     Parameters
     ----------
     page : requests get result
 
-    filename : str
+    file_path : str
         The path to the file that will store the page contents
 
     """
-    with open(filename, 'w') as f:
+    with open(file_path, 'w') as f:
         f.write(page.text)
 
 
