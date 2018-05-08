@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Runs pygameday using the GameDayClient
+"""
 from datetime import datetime
 from pygameday import GameDayClient
 
@@ -13,8 +16,8 @@ except ImportError:
     from config import DATABASE_URI
 
 
-start_date = datetime(2018, 3, 31)
-end_date = datetime(2018, 3, 31)
+start_date = datetime(2018, 4, 30)
+end_date = datetime(2018, 4, 30)
 
 client = GameDayClient(DATABASE_URI)
 client.process_date_range(start_date, end_date)
