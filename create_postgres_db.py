@@ -10,11 +10,22 @@ See the Postgres documentation for details on how to create databases.
 
 Note that the name of the database to create is retrieved from the config.py file.
 """
-from subprocess import call
-from config import DB_NAME
+import logging
+import psycopg2
 
-create_db_cmd = 'createdb ' + DB_NAME
+logger = logging.getLogger('pygameday')
 
-call('echo -n Creating database...', shell=True)
-call(create_db_cmd, shell=True)
-call('echo Done.', shell=True)
+
+db_name = 'gameday'  # Database name to create
+database_uri = 'postgresql://chris:chris@nas-1/postgres'  # Connection parameters
+
+
+with psycopg2.connect(database_uri) as conn:
+    conn.autocommit = True
+    with conn.cursor() as cur:
+        try:
+            cur.execute('CREATE DATABASE {};'.format(db_name))
+            logger.info('Created database')
+        except Exception as ex:
+            logger.exception('Error creating database', ex)
+
