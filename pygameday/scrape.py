@@ -53,7 +53,7 @@ def fetch_epg(year, month, day):
         place on the given day.
 
     """
-    url = "{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH, year, month, day)
+    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH, year, month, day)
     return get_url(url)
 
 
@@ -73,7 +73,7 @@ def fetch_inning_all(game_directory):
         XML-formatted data containing game event data.
 
     """
-    url = GD_SERVER + game_directory + '/inning/inning_all.xml'
+    url = 'http://' + GD_SERVER + game_directory + '/inning/inning_all.xml'
     return get_url(url)
 
 
@@ -93,7 +93,7 @@ def fetch_hit_chart(game_directory):
         XML-formatted data containing ball-in-play data.
 
     """
-    url = GD_SERVER + game_directory + '/inning/inning_hit.xml'
+    url = 'http://' + GD_SERVER + game_directory + '/inning/inning_hit.xml'
     return get_url(url)
 
 
@@ -113,7 +113,7 @@ def fetch_players(game_directory):
         XML-formatted data containing player data.
 
     """
-    url = GD_SERVER + game_directory + '/players.xml'
+    url = 'http://' + GD_SERVER + game_directory + '/players.xml'
     return get_url(url)
 
 

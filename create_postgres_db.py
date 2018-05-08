@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Simple script for creating a PostgreSQL database
+"""Simple script for creating a Postgres database
 
 This script invokes Postgres command line tools, specifically the "createdb" command.  The directory containing these
 commands must be on your PATH for this script to work.
@@ -11,7 +11,6 @@ See the Postgres documentation for details on how to create databases.
 Note that the name of the database to create is retrieved from the config.py file.
 """
 from subprocess import call
-
 from config import DB_NAME
 
 create_db_cmd = 'createdb ' + DB_NAME

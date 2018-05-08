@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
-
-from dateutil import parser
+from datetime import datetime
 from pygameday import GameDayClient
 
 
 def test_ingest():
-    start_date = parser.parse("2015-04-30")
-    end_date = parser.parse("2015-04-30")
+    start_date = datetime(2018, 4, 30)
+    end_date = datetime(2018, 4, 30)
 
     database_uri = "sqlite:///gameday.db"
 

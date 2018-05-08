@@ -13,7 +13,7 @@ from .models import HitInPlay
 from .models import Pitch
 from .models import Player
 
-LOG = logging.getLogger("pygameday")
+logger = logging.getLogger("pygameday")
 
 
 def parse_epg(epg_page):
@@ -72,7 +72,7 @@ def parse_game(game_node):
     else:
         msg = "GameDay ID {} was not parsed because its status is {}" \
                 .format(game_node.get("id"), game_node.get("status"))
-        LOG.info(msg)
+        logger.info(msg)
 
     return db_game
 

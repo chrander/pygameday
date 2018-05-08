@@ -11,7 +11,6 @@ look for config information in that file first, and only refer to this file if i
 
 config_mine.py should look exactly like this file, but with username/password information filled in.
 """
-from __future__ import print_function, division
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Database Parameters
