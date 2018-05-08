@@ -76,8 +76,7 @@ def parse_game(game):
                        )
     else:
         # If the status is something else (e.g., Postponed), log it and continue
-        msg = 'GameDay ID {} was not parsed because its status is {}'.format(game['id'], status)
-        logger.info(msg)
+        logger.info('GameDay ID {} was not parsed because its status is {}'.format(game['id'], status))
 
     return db_game
 

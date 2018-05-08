@@ -4,7 +4,9 @@
 """
 import logging
 from datetime import timedelta
+from concurrent.futures import ThreadPoolExecutor
 
+from tqdm import tqdm
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
@@ -28,7 +30,7 @@ class GameDayClient(object):
 
     Database parameters are defined in config.py.
     """
-    def __init__(self, database_uri, ingest_spring_training=False, log_level="INFO"):
+    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO"):
         """Constructor
 
         Initializes database connection and session
@@ -47,6 +49,9 @@ class GameDayClient(object):
         ingest_spring_training : bool
             Whether to ingest spring training games. [Default: False]
 
+        n_workers : int
+            The number of parallel workers to use when ingesting games
+
         log_level : str
             The logging level. Must be one of NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL [Default: "INFO"]
         """
@@ -59,6 +64,7 @@ class GameDayClient(object):
 
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training
+        self.n_workers = n_workers
         self.player_ids = set()  # Player IDs that have already been inserted into the database
         self.gameday_ids = set()  # Game IDs that have already been inserted into the database
 
@@ -124,13 +130,12 @@ class GameDayClient(object):
             end_date = start_date
             start_date = tmp
 
-        date_range = (end_date - start_date).days + 1  # Add 1 so the range is inclusive of begin_date and end_date
+        # Construct the dates to iterate over. We add 1 to the range so that it is inclusive of begin_date and end_date.
+        date_range = [start_date + timedelta(day) for day in range((end_date - start_date).days + 1)]
 
-        msg = 'Ingesting GameDay data within date range {} to {}'.format(start_date.date(), end_date.date())
-        logger.info(msg)
+        logger.info('Ingesting GameDay data within date range {} to {}'.format(start_date.date(), end_date.date()))
 
-        for day in range(date_range):
-            date = start_date + timedelta(day)
+        for date in tqdm(date_range, total=len(date_range)):
             self.process_date(date)
 
     def process_date(self, date):
@@ -141,22 +146,20 @@ class GameDayClient(object):
         date : datetime.datetime
             The date to process
         """
-        # epg_page = scrape.fetch_epg(date)
         scoreboard = scrape.fetch_master_scoreboard(date)
-        games = scoreboard['data']['games']['game']
 
-        # if epg_page is None:
-        if len(games) == 0:
+        # Check if there are games on the date. If not, skip it.
+        game_data = scoreboard['data']['games']
+        if 'game' not in game_data or len(game_data['game']) == 0:
             logger.warning('No games found on {}'.format(date.date()))
 
         else:
-            # game_xml_nodes = parse.parse_epg(epg_page)
-            msg = 'Processing {} games on {}'.format(len(games), date.date())
-            logger.info(msg)
+            games = scoreboard['data']['games']['game']
+            # Process games in parallel
+            with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
+                executor.map(self.process_game, games)
 
-            for game in games:
-                self.process_game(game)
-
+    # TODO: clean up this function
     def process_game(self, game):
         """Ingests a single game's GameDay data
 
@@ -185,6 +188,7 @@ class GameDayClient(object):
             return
 
         # If the game is a spring training game, skip it if ingest_spring_training is False
+        # A games type of 'S' (spring training) or 'E' (exhibition) means we won't ingest it if the flag is False
         if not self.ingest_spring_training and (db_game.game_type == "S" or db_game.game_type == "E"):
             logger.warning("Skipping game: {}. It's a spring training or exhibition game.".format(gameday_id))
             return
