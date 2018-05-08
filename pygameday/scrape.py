@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 """Provides functionality for scraping MLB GameDay data from the GameDay website
 """
-from __future__ import print_function, division, absolute_import
 import requests
 import logging
 
-from pygameday.constants import GD_SERVER
-from pygameday.constants import GD_BASE_PATH
+from .constants import GD_SERVER
+from .constants import GD_BASE_PATH
 
 logger = logging.getLogger("pygameday")
 

@@ -4,8 +4,6 @@
 
 See the usage() function for how to call this script
 """
-from __future__ import print_function, division, absolute_import
-
 import sys
 
 from pygameday import GameDayClient
@@ -46,24 +44,25 @@ def run():
 
 def usage():
     print(
-    """
-    USAGE:
-      $ python main.py [start_date]
-      $ python main.py [start_date] [end_date]
+        """ 
+        USAGE:
+          $ python main.py [start_date]
+          $ python main.py [start_date] [end_date]
 
-        The parameters start_date and end_date must in the format 'yyyy-mm-dd'
+            The parameters start_date and end_date must in the format 'yyyy-mm-dd'
 
-        If only start_date is given, the GameDay data for that date will be ingested.  If start_date and end_date are
-        both given, GameDay data for all days between start_date and end_date will be ingested (including the start
-        date and end date).
+            If only start_date is given, the GameDay data for that date will be ingested.  If start_date and end_date 
+            are both given, GameDay data for all days between start_date and end_date will be ingested (including the 
+            start date and end date).
 
-    NOTE:
-      Make certain that you have configured your database settings correctly in config.py!
+        NOTE:
+          Make certain that you have configured your database settings correctly in config.py!
 
-    EXAMPLES:
-      $ python main.py 2015-05-29
-      $ python main.py 2015-05-29 2015-06-02
-    """)
+        EXAMPLES:
+          $ python main.py 2015-05-29
+          $ python main.py 2015-05-29 2015-06-02
+        """)
+
 
 if __name__ == "__main__":
     run()

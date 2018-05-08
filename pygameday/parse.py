@@ -2,18 +2,16 @@
 # -*- coding: utf-8 -*-
 """Defines functionality for parsing MLB GameDay data from web content into database classes
 """
-from __future__ import print_function, division, absolute_import
-
 import logging
 
 from dateutil import parser
 from lxml import etree
 
-from pygameday.models import AtBat
-from pygameday.models import Game
-from pygameday.models import HitInPlay
-from pygameday.models import Pitch
-from pygameday.models import Player
+from .models import AtBat
+from .models import Game
+from .models import HitInPlay
+from .models import Pitch
+from .models import Player
 
 LOG = logging.getLogger("pygameday")
 

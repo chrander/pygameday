@@ -10,8 +10,6 @@ See the Postgres documentation for details on how to create databases.
 
 Note that the name of the database to create is retrieved from the config.py file.
 """
-from __future__ import print_function, division
-
 from subprocess import call
 
 from config import DB_NAME

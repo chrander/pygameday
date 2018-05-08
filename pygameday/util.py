@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
-
 import os
 import sys
 import logging
 from datetime import datetime
 from dateutil import parser
 
-from pygameday import constants
+from . import constants
+
 
 logger = logging.getLogger("pygameday")
+
 
 def configure_logging(log_name, log_to_file=False):
 
     logger = logging.getLogger(log_name)
-    log_level = logging.DEBUG
+    log_level = logging.getLevelName(constants.LOG_LEVEL)
     logger.setLevel(log_level)
     logger.propagate = 0
 

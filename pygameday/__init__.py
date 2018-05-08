@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
-
-from pygameday import util
-from pygameday.pygameday import GameDayClient
+from . import util
+from .pygameday import GameDayClient
 
 __all__ = ["GameDayClient"]
 

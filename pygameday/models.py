@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Defines classes for database mappings, plus some database helper functions
 """
-from __future__ import print_function, division, absolute_import
-
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import Float
@@ -133,7 +131,7 @@ class Pitch(BASE):
     break_angle = Column(Float)
     break_length = Column(Float)
     pitch_type = Column(String)
-    type_conf = Column(String)
+    type_conf = Column(Float)
     zone = Column(Integer)
     nasty = Column(Integer)
     spin_dir = Column(Float)

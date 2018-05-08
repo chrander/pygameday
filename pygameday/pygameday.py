@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Defines GameDayClient, the primary class for scraping, parsing, and ingesting MLB GameDay data.
 """
-from __future__ import print_function, division, absolute_import
-
 import logging
 from datetime import timedelta
 from dateutil import parser
@@ -12,16 +10,16 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-import pygameday.util as util
-import pygameday.parse as parse
-import pygameday.scrape as scrape
-from pygameday.models import Game
-from pygameday.models import Player
-from pygameday.models import AtBat
-from pygameday.models import Pitch
-from pygameday.models import HitInPlay
-from pygameday.models import create_db_tables
-from pygameday.models import db_connect
+from . import util
+from . import parse as parse
+from . import scrape as scrape
+from .models import Game
+from .models import Player
+from .models import AtBat
+from .models import Pitch
+from .models import HitInPlay
+from .models import create_db_tables
+from .models import db_connect
 
 logger = logging.getLogger("pygameday")
 
