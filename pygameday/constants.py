@@ -5,14 +5,14 @@
 # ----------------------------------------------------------------------------------------------------------------------
 # GameDay URL parameters
 #
-GD_SERVER = "gd2.mlb.com"
-GD_BASE_PATH = "/components/game/mlb"
+GD_SERVER = 'gd2.mlb.com'
+GD_BASE_PATH = '/components/game/mlb'
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Logging
 #
-LOG_FOLDER = "logs"
-LOG_LEVEL = "DEBUG"
+LOG_FOLDER = 'logs'
+LOG_LEVEL = 'DEBUG'
 LOG_FORMAT_FILE = '%(asctime)s | %(filename)s | %(funcName)s (%(lineno)d) | %(levelname)s | %(message)s'
 LOG_FORMAT_CONSOLE = '%(asctime)s | %(levelname)s | %(message)s'
-LOG_FORMAT_TIME = "%Y-%m-%d %H:%M:%S"
+LOG_FORMAT_TIME = '%Y-%m-%d %H:%M:%S'
