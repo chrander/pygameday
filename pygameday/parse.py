@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Defines functionality for parsing MLB GameDay data from web content into database classes
+"""
+Defines functionality for parsing MLB GameDay data from web content into database classes
 """
 import logging
+from datetime import timezone
+from datetime import timedelta
 
 from dateutil import parser
 from lxml import etree
@@ -13,7 +16,7 @@ from .models import HitInPlay
 from .models import Pitch
 from .models import Player
 
-logger = logging.getLogger("pygameday")
+logger = logging.getLogger('pygameday')
 
 
 def parse_epg(epg_page):
@@ -31,47 +34,49 @@ def parse_epg(epg_page):
     """
     root = etree.fromstring(epg_page.content)
     game_nodes = root.xpath('descendant::game')  # find all <game> nodes in the tree
-
     return game_nodes
 
 
-def parse_game(game_node):
-    """Parses a Game XML node into a Game database object
+def parse_game(game):
+    """Parses a game dictionary to build a database game
 
     Parameters
     ----------
-    game_node : lxml node
-        The Game node to parse
+    game : dict
+        The raw dictionary format of a game, probably parsed from a master_scoreboard.json or similar document
 
     Returns
     -------
     A Game object
     """
     db_game = None
+    status = game['status']['status']
 
     # Only parse games if they are final
-    if game_node.get("status") in ["Final", "Completed Early"]:
+    if status in ['Final', 'Completed Early']:
+        # Use the *_hm_lg versions of dates and times
+        start_datetime = parser.parse(game['time_date_hm_lg'])
+        time_zone_offset = int(game['time_zone_hm_lg'])
+        start_datetime = start_datetime.replace(tzinfo=timezone(timedelta(hours=time_zone_offset)))
 
-        start_datetime = parser.parse(game_node.get("start"))
-
-        db_game = Game(gameday_id=game_node.get("id"),
-                       venue=game_node.get("venue"),
+        db_game = Game(gameday_id=game['id'],
+                       venue=game['venue'],
                        start_time=start_datetime,
-                       game_data_directory=game_node.get("game_data_directory"),
-                       game_type=game_node.get("game_type"),
-                       home_name_abbrev=game_node.get("home_name_abbrev"),
-                       home_team_city=game_node.get("home_team_city"),
-                       home_team_name=game_node.get("home_team_name"),
-                       away_name_abbrev=game_node.get("away_name_abbrev"),
-                       away_team_city=game_node.get("away_team_city"),
-                       away_team_name=game_node.get("away_team_name"),
-                       home_team_runs=game_node.get("home_team_runs"),
-                       away_team_runs=game_node.get("away_team_runs"),
-                       league=game_node.get("league")
+                       game_data_directory=game['game_data_directory'],
+                       game_type=game['game_type'],
+                       home_name_abbrev=game['home_name_abbrev'],
+                       home_team_city=game['home_team_city'],
+                       home_team_name=game['home_team_name'],
+                       away_name_abbrev=game['away_name_abbrev'],
+                       away_team_city=game['away_team_city'],
+                       away_team_name=game['away_team_name'],
+                       home_team_runs=game['linescore']['r']['home'],
+                       away_team_runs=game['linescore']['r']['away'],
+                       league=game['league']
                        )
     else:
-        msg = "GameDay ID {} was not parsed because its status is {}" \
-                .format(game_node.get("id"), game_node.get("status"))
+        # If the status is something else (e.g., Postponed), log it and continue
+        msg = 'GameDay ID {} was not parsed because its status is {}'.format(game['id'], status)
         logger.info(msg)
 
     return db_game
@@ -92,7 +97,6 @@ def parse_players(players_page):
     """
     root = etree.fromstring(players_page.content)
     player_nodes = root.xpath('descendant::player')  # find all <player> nodes
-
     db_players_list = [parse_player_node(p) for p in player_nodes]
     return db_players_list
 
@@ -109,12 +113,12 @@ def parse_player_node(player_node):
     -------
     A Player database object
     """
-    db_player = Player(player_id=player_node.get("id"),
-                       first=player_node.get("first"),
-                       last=player_node.get("last"),
-                       boxname=player_node.get("boxname"),
-                       rl=player_node.get("rl"),
-                       bats=player_node.get("bats"),
+    db_player = Player(player_id=player_node.get('id'),
+                       first=player_node.get('first'),
+                       last=player_node.get('last'),
+                       boxname=player_node.get('boxname'),
+                       rl=player_node.get('rl'),
+                       bats=player_node.get('bats'),
                        )
     return db_player
 
@@ -125,11 +129,10 @@ def parse_hit_chart(hit_chart_page):
     Parameters
     ----------
     hit_chart_page
-        The dadta from inning_hit.xml
+        The data from inning_hit.xml
     """
     root = etree.fromstring(hit_chart_page.content)
     hip_nodes = root.xpath('descendant::hip')  # find all <hip> nodes
-
     db_hips_list = [parse_hit_in_play_node(h) for h in hip_nodes]
     return db_hips_list
 
@@ -146,14 +149,14 @@ def parse_hit_in_play_node(hip_node):
     -------
     A HitInPlay object
     """
-    hip = HitInPlay(batter_id=hip_node.get("batter"),
-                    pitcher_id=hip_node.get("pitcher"),
-                    des=hip_node.get("des"),
-                    hip_type=hip_node.get("type"),
-                    team=hip_node.get("team"),
-                    inning=hip_node.get("inning"),
-                    x=hip_node.get("x"),
-                    y=hip_node.get("y")
+    hip = HitInPlay(batter_id=hip_node.get('batter'),
+                    pitcher_id=hip_node.get('pitcher'),
+                    des=hip_node.get('des'),
+                    hip_type=hip_node.get('type'),
+                    team=hip_node.get('team'),
+                    inning=hip_node.get('inning'),
+                    x=hip_node.get('x'),
+                    y=hip_node.get('y')
                     )
     return hip
 
@@ -174,7 +177,7 @@ def parse_inning_all(inning_all_page):
     ab_nodes_bot = []
 
     for inn in inning_nodes:
-        inning_num = inn.get("num")  # the inning number
+        inning_num = inn.get('num')  # the inning number
 
         inning_top = inn.xpath('top')  # the top of the inning, as a list
         inning_bot = inn.xpath('bottom')  # the bottom of the inning, as a list
@@ -218,14 +221,14 @@ def parse_at_bat(at_bat, inning_num, inning_half):
             inning=inning_num,
             inning_half=inning_half,
             n_pitches=len(pitches),
-            n_balls=at_bat.get("b"),
-            n_strikes=at_bat.get("s"),
-            n_outs=at_bat.get("o"),
-            batter_id=at_bat.get("batter"),
-            pitcher_id=at_bat.get("pitcher"),
-            batter_stance=at_bat.get("stand"),
-            des=at_bat.get("des"),
-            event=at_bat.get("event")
+            n_balls=at_bat.get('b'),
+            n_strikes=at_bat.get('s'),
+            n_outs=at_bat.get('o'),
+            batter_id=at_bat.get('batter'),
+            pitcher_id=at_bat.get('pitcher'),
+            batter_stance=at_bat.get('stand'),
+            des=at_bat.get('des'),
+            event=at_bat.get('event')
             )
 
     for index, pitch in enumerate(pitches):
@@ -257,37 +260,37 @@ def parse_pitch(pitch, inning_num, inning_half, index):
             at_bat_pitch_num=index,
             inning=inning_num,
             inning_half=inning_half,
-            des=pitch.get("des"),
-            result_type=pitch.get("type"),
-            gameday_sv_id=pitch.get("sv_id"),
-            x=pitch.get("x"),
-            y=pitch.get("y"),
-            start_speed=pitch.get("start_speed"),
-            end_speed=pitch.get("end_speed"),
-            sz_top=pitch.get("sz_top"),
-            sz_bot=pitch.get("sz_bot"),
-            pfx_x=pitch.get("pfx_x"),
-            pfx_z=pitch.get("pfx_z"),
-            px=pitch.get("px"),
-            pz=pitch.get("pz"),
-            x0=pitch.get("x0"),
-            y0=pitch.get("y0"),
-            z0=pitch.get("z0"),
-            vx0=pitch.get("vx0"),
-            vy0=pitch.get("vy0"),
-            vz0=pitch.get("vz0"),
-            ax=pitch.get("ax"),
-            ay=pitch.get("ay"),
-            az=pitch.get("az"),
-            break_y=pitch.get("break_y"),
-            break_angle=pitch.get("break_angle"),
-            break_length=pitch.get("break_length"),
-            pitch_type=pitch.get("pitch_type"),
-            type_conf=pitch.get("type_conf"),
-            zone=pitch.get("zone"),
-            nasty=pitch.get("nasty"),
-            spin_dir=pitch.get("spin_dir"),
-            spin_rate=pitch.get("spin_rate")
+            des=pitch.get('des'),
+            result_type=pitch.get('type'),
+            gameday_sv_id=pitch.get('sv_id'),
+            x=pitch.get('x'),
+            y=pitch.get('y'),
+            start_speed=pitch.get('start_speed'),
+            end_speed=pitch.get('end_speed'),
+            sz_top=pitch.get('sz_top'),
+            sz_bot=pitch.get('sz_bot'),
+            pfx_x=pitch.get('pfx_x'),
+            pfx_z=pitch.get('pfx_z'),
+            px=pitch.get('px'),
+            pz=pitch.get('pz'),
+            x0=pitch.get('x0'),
+            y0=pitch.get('y0'),
+            z0=pitch.get('z0'),
+            vx0=pitch.get('vx0'),
+            vy0=pitch.get('vy0'),
+            vz0=pitch.get('vz0'),
+            ax=pitch.get('ax'),
+            ay=pitch.get('ay'),
+            az=pitch.get('az'),
+            break_y=pitch.get('break_y'),
+            break_angle=pitch.get('break_angle'),
+            break_length=pitch.get('break_length'),
+            pitch_type=pitch.get('pitch_type'),
+            type_conf=pitch.get('type_conf'),
+            zone=pitch.get('zone'),
+            nasty=pitch.get('nasty'),
+            spin_dir=pitch.get('spin_dir'),
+            spin_rate=pitch.get('spin_rate')
             )
     return db_pitch
 
