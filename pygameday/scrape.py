@@ -130,7 +130,6 @@ def save_page(page, filename):
     """
     with open(filename, 'w') as f:
         f.write(page.text)
-        f.close()
 
 
 def test():
