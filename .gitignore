@@ -1,7 +1,8 @@
-# Byte-conpiled files
+# Byte-compiled files
 *.pyc
 
 # Databases, especially sqlite
+.cache
 *.db
 *.sqlite
 
