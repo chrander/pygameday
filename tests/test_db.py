@@ -1,11 +1,5 @@
-#!/usr/bin/python
-#
-# import sys
-
-# sys.path.append("..")
-
-# from dateutil import parser
-from datetime import datetime
+#!/usr/bin/env python
+from dateutil import parser
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
@@ -66,8 +60,7 @@ def gen_fake_game_data():
     game = Game(
         gameday_id='2014/04/04/atlmlb-wasmlb-1',
         venue='Nationals Park',
-        # start_time=parser.parse('2014-04-04T13:05:00-0400'),
-        start_time=datetime.strptime('2014-04-04T13:05:00-0400', '%Y-%m-%dT%H:%M:%S%z'),
+        start_time=parser.parse('2014-04-04T13:05:00-0400'),
         game_data_directory='/components/game/mlb/year_2014/month_04/day_04/gid_2014_04_04_atlmlb_wasmlb_1',
         home_name_abbrev='WSH',
         home_team_city='Washington',

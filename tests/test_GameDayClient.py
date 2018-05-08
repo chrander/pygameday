@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import unittest
 from datetime import datetime
 from pygameday import GameDayClient
 
 
-def test_ingest():
-    start_date = datetime(2018, 4, 30)
-    end_date = datetime(2018, 4, 30)
+class TestGameDayClient(unittest.TestCase):
 
-    database_uri = "sqlite:///gameday.db"
+    def test_ingest(self):
+        start_date = datetime(2016, 4, 8)
+        end_date = datetime(2016, 4, 8)
 
-    client = GameDayClient(database_uri)
-    client.db_stats()
-    client.process_date_range(start_date, end_date)
-    client.db_stats()
+        database_uri = "sqlite:///gameday.db"
+
+        client = GameDayClient(database_uri)
+        client.db_stats()
+        client.process_date_range(start_date, end_date)
+        client.db_stats()
 
 
-if __name__ == "__main__":
-    test_ingest()
+if __name__ == '__main__':
+    unittest.main()
