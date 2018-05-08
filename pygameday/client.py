@@ -150,7 +150,7 @@ class GameDayClient(object):
 
         if epg_page is None:
             msg = "No games found on {}".format(date.date())
-            logger.warn(msg)
+            logger.warning(msg)
 
         else:
             game_xml_nodes = parse.parse_epg(epg_page)
@@ -175,7 +175,7 @@ class GameDayClient(object):
 
         if gameday_id in self.gameday_ids:
             # The game has been processed and should already be in the database
-            logger.warn("Skipping game: {}. It's already in the DB.".format(gameday_id))
+            logger.warning("Skipping game: {}. It's already in the DB.".format(gameday_id))
             return
 
         # Parse the game
@@ -185,13 +185,13 @@ class GameDayClient(object):
         if db_game is None:
             msg = ("Skipping game: {}. It contained no data, "
                    "probably because its status isn't Final").format(gameday_id)
-            logger.warn(msg)
+            logger.warning(msg)
             return
 
         # If the game is a spring training game, skip it if ingest_spring_training is False
         if not self.ingest_spring_training and (db_game.game_type == "S" or db_game.game_type == "E"):
             msg = "Skipping game: {}. It's a spring training or exhibition game.".format(gameday_id)
-            logger.warn(msg)
+            logger.warning(msg)
             return
 
         msg = "Processing game ID {}".format(gameday_id)
