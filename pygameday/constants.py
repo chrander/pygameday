@@ -12,6 +12,7 @@ GD_BASE_PATH = "/components/game/mlb"
 # Logging
 #
 LOG_FOLDER = "logs"
+LOG_LEVEL = "DEBUG"
 LOG_FORMAT_FILE = '%(asctime)s | %(filename)s | %(funcName)s (%(lineno)d) | %(levelname)s | %(message)s'
 LOG_FORMAT_CONSOLE = '%(asctime)s | %(levelname)s | %(message)s'
 LOG_FORMAT_TIME = "%Y-%m-%d %H:%M:%S"
