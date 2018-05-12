@@ -57,7 +57,14 @@ def parse_game(game):
         # Use the *_hm_lg versions of dates and times
         start_datetime = parser.parse(game['time_date_hm_lg'])
         time_zone_offset = int(game['time_zone_hm_lg'])
+        time_ampm = game['hm_lg_ampm']
+
         start_datetime = start_datetime.replace(tzinfo=timezone(timedelta(hours=time_zone_offset)))
+
+        # Game times in the data are given using a 12-hour clock. If game time is in the afternoon, we need to add
+        # 12 hours. Otherwise the database will think games start at times like 7:05 in the morning
+        if time_ampm == 'PM':
+            start_datetime += timedelta(hours=12)
 
         db_game = Game(gameday_id=game['id'],
                        venue=game['venue'],

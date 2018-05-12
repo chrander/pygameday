@@ -8,13 +8,13 @@ from pygameday import GameDayClient
 class TestGameDayClient(unittest.TestCase):
 
     def test_ingest(self):
-        start_date = datetime(2018, 4, 1)
-        end_date = datetime(2018, 4, 1)
+        start_date = datetime(2018, 4, 6)
+        end_date = datetime(2018, 4, 6)
 
         database_uri = "sqlite:///gameday.db"
-        n_workers = 8
+        n_workers = 4
 
-        client = GameDayClient(database_uri, n_workers=n_workers)
+        client = GameDayClient(database_uri, n_workers=n_workers, parallel=True)
         client.db_stats()
         client.process_date_range(start_date, end_date)
         client.db_stats()

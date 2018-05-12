@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import sys
 import logging
 from datetime import datetime
-from dateutil import parser
 
 from . import constants
 
@@ -12,7 +10,7 @@ from . import constants
 logger = logging.getLogger('pygameday')
 
 
-def configure_logging(log_name, log_to_file=False):
+def configure_logging(log_name, log_to_file=True):
 
     logger = logging.getLogger(log_name)
     log_level = logging.getLevelName(constants.LOG_LEVEL)
@@ -57,5 +55,4 @@ def set_logging_level(level):
         String corresponding to a valid logging level.
         Acceptable values: NOTSET, DEBUG, WARN, INFO, ERROR, CRITICAL
     """
-    logger = logging.getLogger('pygameday')
     logger.setLevel(logging.getLevelName(level))

@@ -16,8 +16,8 @@ except ImportError:
     from config import DATABASE_URI
 
 
-start_date = datetime(2018, 4, 30)
-end_date = datetime(2018, 4, 30)
+start_date = datetime(2018, 5, 11)
+end_date = datetime(2018, 5, 31)
 
-client = GameDayClient(DATABASE_URI)
+client = GameDayClient(DATABASE_URI, n_workers=4)
 client.process_date_range(start_date, end_date)

@@ -50,7 +50,7 @@ class Game(BASE):
     game_id = Column(Integer, Sequence('game_id_seq'), primary_key=True)
     gameday_id = Column(String, unique=True, index=True)
     venue = Column(String)
-    start_time = Column(DateTime)
+    start_time = Column(DateTime(timezone=True))
     game_data_directory = Column(String)
     game_type = Column(String)
     home_name_abbrev = Column(String(3))

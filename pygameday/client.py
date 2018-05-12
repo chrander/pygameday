@@ -4,7 +4,7 @@
 """
 import logging
 from datetime import timedelta
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 
 from tqdm import tqdm
 from sqlalchemy import func
@@ -30,7 +30,7 @@ class GameDayClient(object):
 
     Database parameters are defined in config.py.
     """
-    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO"):
+    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO", parallel=True):
         """Constructor
 
         Initializes database connection and session
@@ -54,17 +54,20 @@ class GameDayClient(object):
 
         log_level : str
             The logging level. Must be one of NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL [Default: "INFO"]
+
+        parallel : bool
+            Whether to parallelize over games
         """
         util.set_logging_level(log_level)
 
         engine = db_connect(database_uri)
         create_db_tables(engine)
-        self.Session = sessionmaker(bind=engine)
         logger.info("Initialized GameDayClient using '{}'".format(database_uri))
 
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training
         self.n_workers = n_workers
+        self.parallel = parallel
         self.player_ids = set()  # Player IDs that have already been inserted into the database
         self.gameday_ids = set()  # Game IDs that have already been inserted into the database
 
@@ -73,7 +76,10 @@ class GameDayClient(object):
     def db_stats(self):
         """Prints information about the current database contents
         """
-        session = self.Session()
+        engine = db_connect(self.database_uri)
+        session_maker = sessionmaker(bind=engine)
+        session = session_maker()
+
         game_count = session.query(func.count(Game.game_id)).scalar()
         player_count = session.query(func.count(Player.player_id)).scalar()
         atbat_count = session.query(func.count(AtBat.at_bat_id)).scalar()
@@ -101,10 +107,13 @@ class GameDayClient(object):
         Keeping track of games and players already inserted saves us from trying to insert objects that are already
         there.  It also helps with limiting the number of times we have to query the database.
         """
-        session = self.Session()
+        engine = db_connect(self.database_uri)
+        session_maker = sessionmaker(bind=engine)
+        session = session_maker()
 
         self.gameday_ids = {gid[0] for gid in session.query(Game.gameday_id)}
         self.player_ids = {pid[0] for pid in session.query(Player.player_id)}
+        session.close()
 
         logger.debug('There are currently {} games and {} players in the database'.format(
                 len(self.gameday_ids), len(self.player_ids)))
@@ -155,9 +164,16 @@ class GameDayClient(object):
 
         else:
             games = scoreboard['data']['games']['game']
-            # Process games in parallel
-            with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
-                executor.map(self.process_game, games)
+
+            if self.parallel:
+                # Process games in parallel
+                with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
+                    executor.map(self.process_game, games)
+            else:
+                # Process games serially
+                for game in games:
+                    self.process_game(game)
+
 
     # TODO: clean up this function
     def process_game(self, game):
@@ -168,7 +184,11 @@ class GameDayClient(object):
         game : dict
             The game to process
         """
-        session = self.Session()
+        # Create a new connection for each game so we don't run into weirdness with connections shared across
+        # processes or threads
+        engine = db_connect(self.database_uri)
+        session_maker = sessionmaker(bind=engine)
+        session = session_maker()
 
         game_dir = game["game_data_directory"]
         gameday_id = game["id"]
@@ -255,7 +275,7 @@ class GameDayClient(object):
                     session.rollback()
                     msg = ("IntegrityError when inserting player {}, "
                            "probably because it's already in the database".format(str(player)))
-                    logger.error(msg)
+                    logger.warning(msg)
                     error_occurred = True
 
                 except Exception as ex:
