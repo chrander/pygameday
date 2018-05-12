@@ -13,14 +13,23 @@ Note that the name of the database to create is retrieved from the config.py fil
 import logging
 import psycopg2
 
+
+try:
+    # Look for Database URI in config_mine.py first.
+    # config_mine.py should not be version controlled, because it can contain username/password information.
+    # config.py, a default config file, is version controlled. It should not have any usernames, passwords, or other
+    # potentially sensitive information.
+    from config_mine import DATABASE_URI
+except ImportError:
+    from config import DATABASE_URI
+
+
 logger = logging.getLogger('pygameday')
 
-
 db_name = 'gameday'  # Database name to create
-database_uri = 'postgresql://chris:chris@nas-1/postgres'  # Connection parameters
 
 
-with psycopg2.connect(database_uri) as conn:
+with psycopg2.connect(DATABASE_URI) as conn:
     conn.autocommit = True
     with conn.cursor() as cur:
         try:
