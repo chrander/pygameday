@@ -53,7 +53,7 @@ def parse_game(game):
     status = game['status']['status']
 
     # Only parse games if they are final
-    if status in ['Final', 'Completed Early']:
+    if status in ['Final', 'Completed Early', 'Preview']:
         # Use the *_hm_lg versions of dates and times
         start_datetime = parser.parse(game['time_date_hm_lg'])
         time_zone_offset = int(game['time_zone_hm_lg'])
