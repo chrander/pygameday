@@ -27,8 +27,6 @@ logger = logging.getLogger('pygameday')
 
 class GameDayClient(object):
     """Class for ingesting GameDay data into a database
-
-    Database parameters are defined in config.py.
     """
     def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO"):
         """Constructor

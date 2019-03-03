@@ -18,7 +18,7 @@ BASE = declarative_base()
 
 
 def db_connect(database_uri):
-    """Connects to a database using database settings in config.py
+    """Connects to a database
 
     Parameters
     ----------

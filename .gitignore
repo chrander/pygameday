@@ -6,9 +6,6 @@
 *.db
 *.sqlite
 
-# Configuration files containing potentially sensitive data (such as database user names and passwords)
-config_mine.py
-
 # Logging
 logs/
 *.log

@@ -7,13 +7,15 @@ from sqlalchemy.exc import IntegrityError
 from pygameday.models import Game, AtBat, Pitch, Player
 from pygameday.models import create_db_tables
 from pygameday.models import db_connect
-import config
+
+
+database_uri = "sqlite:///gameday.db"  # sqlite database on the local machine
 
 
 def test():
     """Test database functionality """
 
-    engine = db_connect(config.DATABASE_URI)
+    engine = db_connect(database_uri)
     create_db_tables(engine)
     sm = sessionmaker(bind=engine)
     session = sm()
