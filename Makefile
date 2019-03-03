@@ -9,7 +9,7 @@ upload-test: dist
 	python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 install-test:
-    # Install from TestPyPi
+	# Install from TestPyPi
 	pip install --index-url https://test.pypi.org/simple/ --no-deps pygameday
 
 upload: dist
@@ -17,6 +17,5 @@ upload: dist
 	python3 -m twine upload dist/*
 
 install:
-    # Install from PyPi
+ 	# Install from PyPi
 	pip install pygameday
-
