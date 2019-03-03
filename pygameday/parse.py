@@ -53,7 +53,7 @@ def parse_game(game):
     status = game['status']['status']
 
     # Only parse games if they are final
-    if status in ['Final', 'Completed Early', 'Preview']:
+    if status in ['Final', 'Completed Early']:
         # Use the *_hm_lg versions of dates and times
         start_datetime = parser.parse(game['time_date_hm_lg'])
         time_zone_offset = int(game['time_zone_hm_lg'])
@@ -82,7 +82,7 @@ def parse_game(game):
                        league=game['league']
                        )
     else:
-        # If the status is something else (e.g., Postponed), log it and continue
+        # If the status is something else (e.g., Postponed or Preview), log it and continue
         logger.info('GameDay ID {} was not parsed because its status is {}'.format(game['id'], status))
 
     return db_game
