@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = 'pygameday',
-    version = '0.2',
+    version = '0.3',
     author = 'Chris Anderson',
     author_email = 'christian.c.anderson@gmail.com',
     packages = ['pygameday'],
@@ -15,7 +15,7 @@ setup(
         'sqlalchemy',
         'tqdm'
     ],
-    download_url = 'https://github.com/chrander/pygameday/tarball/0.1',
+    download_url = 'https://github.com/chrander/pygameday/tarball/0.3',
     keywords = ['baseball', 'gameday', 'database', 'scraping'],
     classifiers = [],
 )
