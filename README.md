@@ -29,38 +29,47 @@ It should be noted that I've tested only SQLite and Postgres.
 ## Installation
 Install pygameday using `pip`:
 
-```python
+```
 pip install pygameday
 ```
 
-Pygameday was developed and tested using Python 2.7. It may run 
-with Python 3, but I need to do more testing.
+Pygameday was developed and tested using Python 3.
 
 ## Quickstart
-Pygameday can be run in two modes:  by instantiating a GameDayClient 
-in your own Python code, or by using the command line tool.
+Run pygameday by instantiating a GameDayClient.
 
 ### Using the GameDayClient
-First, instantiate the database client. All you need to do is 
+First, instantiate the database client. You need to do is 
 specify the database URI. This example creates an SQLite database
 named `gameday.db` in the current directory, but you can substitute
 a URI for your database flavor of choice.
 
+The `n_workers` parameter determines how many parallel processes are
+used to insert game data. To handle database inserts serially, set
+`n_workers=1`. Serial processing tends to work better for SQLite
+databases, which is why it's used in this example, but a server-based 
+database implementation should be able to handle parallel processes.
+
 ```python
 from pygameday import GameDayClient
 database_uri = "sqlite:///gameday.db"
-client = GameDayClient(database_uri)
+client = GameDayClient(database_uri, n_workers=1)
 ```
 
 Ingest games that occurred on a single day by specifying a date.
 ```python
-client.process_date("2015-05-01")  # Ingest games on May 1, 2015
+from datetime import datetime
+
+date_to_process = datetime(2015, 5, 1)  # Ingest games on May 1, 2015
+client.process_date(date_to_process)
 ```
 
 You can also ingest games within a date range.
 ```python
 # Ingest games between May 1, 2015 and May 3, 2015
-client.process_date_range("2015-05-01", "2015-05-03")
+start_date = datetime(2015, 5, 1)
+end_date = datetime(2015, 5, 3)
+client.process_date_range(start_date, end_date)
 ```
 
 After ingesting data, use any tool you like to verify that the 
@@ -72,32 +81,8 @@ from sqlalchemy import create_engine
 engine = create_engine(database_uri)
 
 # Execute SQL queries against the database we just created
-data = pd.read_sql_query("SELECT * FROM games LIMIT 5", engine)
+data = pd.read_sql("SELECT * FROM games LIMIT 5", engine)
 data.head()
-```
-
-### Running from the command line
-To run from the command line, `cd` to the top level pygameday 
-directory. This directory contains files called `config.py` and 
-`main.py`. To run the GameDay client, execute 
-`python main.py [yyyy-mm-dd]`, 
-where `yyyy` is a four-digit year, `mm` is a two-digit month, and 
-`dd` is a two-digit day.  For example:
-
-```
-$ python main.py 2015-05-30
-```
-
-Pygameday will ingest GameDay data for games played on the 
-specified day, including information for games, atbats, hits in play, 
-pitches, and players. 
-
-Alternatively, you can specify two dates on the command line, and
-pygameday will retrieve and ingest data for games on all days 
-in the date range represented by the given dates.  For example:
-
-```
-$ python main.py 2015-05-31 2015-06-02
 ```
 
 ## Database Configuration
@@ -116,7 +101,6 @@ Here are some example URIs.
 SQLAlchemy's [engine documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html)
 has additional details about the dialects it supports.
 
-## TODO
-* Better, more comprehensive unit testing
-* Ensure Python 3 compatibility
-* Enable multi-threaded processing
+
+## Developer 
+Chris Anderson, <chrand3r [at] gmail [dot] com>
