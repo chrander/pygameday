@@ -30,7 +30,7 @@ class GameDayClient(object):
 
     Database parameters are defined in config.py.
     """
-    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO", parallel=True):
+    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO"):
         """Constructor
 
         Initializes database connection and session
@@ -54,9 +54,6 @@ class GameDayClient(object):
 
         log_level : str
             The logging level. Must be one of NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL [Default: "INFO"]
-
-        parallel : bool
-            Whether to parallelize over games
         """
         util.set_logging_level(log_level)
 
@@ -67,7 +64,6 @@ class GameDayClient(object):
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training
         self.n_workers = n_workers
-        self.parallel = parallel
         self.player_ids = set()  # Player IDs that have already been inserted into the database
         self.gameday_ids = set()  # Game IDs that have already been inserted into the database
 
@@ -165,7 +161,7 @@ class GameDayClient(object):
         else:
             games = scoreboard['data']['games']['game']
 
-            if self.parallel:
+            if self.n_workers > 1:
                 # Process games in parallel
                 with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
                     executor.map(self.process_game, games)
