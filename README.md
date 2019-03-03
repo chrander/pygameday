@@ -26,6 +26,13 @@ supports. As of this writing, the following dialects are supported:
 
 It should be noted that I've tested only SQLite and Postgres.
 
+## Examples
+The  [examples](./examples) directory contains a documented
+[Jupyter notebook](./examples/example.ipynb) and a more stripped-down example 
+[script](./examples/example.py). You can also refer to the Quickstart section below.
+
+
+
 ## Installation
 Install pygameday using `pip`:
 
