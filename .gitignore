@@ -18,6 +18,7 @@ logs/
 .ipynb_checkpoints/
 
 # Distribution stuff
+build/
 dist/
 MANIFEST
 
