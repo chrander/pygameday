@@ -46,14 +46,15 @@ Pygameday was developed and tested using Python 3.
 Run pygameday by instantiating a GameDayClient.
 
 ### Using the GameDayClient
-First, instantiate the database client. You need to do is 
-specify the database URI. This example creates an SQLite database
+First, instantiate the database client by specifying a database URI. 
+This example creates an SQLite database
 named `gameday.db` in the current directory, but you can substitute
-a URI for your database flavor of choice.
+a URI for your database flavor of choice, as long as the database is supported
+by SQLAlchemy.
 
 The `n_workers` parameter determines how many parallel processes are
-used to insert game data. To handle database inserts serially, set
-`n_workers=1`. Serial processing tends to work better for SQLite
+used to insert game data. By default, `n_workers` is set to 4. To handle database 
+inserts serially, set `n_workers=1`. Serial processing tends to work better for SQLite
 databases, which is why it's used in this example, but a server-based 
 database implementation should be able to handle parallel processes.
 
@@ -63,7 +64,7 @@ database_uri = "sqlite:///gameday.db"
 client = GameDayClient(database_uri, n_workers=1)
 ```
 
-Ingest games that occurred on a single day by specifying a date.
+Ingest games that occurred on a single day by specifying a standard Python datetime.
 ```python
 from datetime import datetime
 
@@ -93,7 +94,7 @@ data.head()
 ```
 
 ## Database Configuration
-You only need to specify the URI for the database for pygameday to work.
+You  need to specify a valid database URI for pygameday to work.
 Here are some example URIs.
 
 **SQLite**: 
