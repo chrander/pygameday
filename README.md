@@ -33,6 +33,13 @@ Install pygameday using `pip`:
 pip install pygameday
 ```
 
+Pygameday depends on tqdm, sqlalchemy, lxml, requests, and python-dateutil. If
+those packages are not automatically installed, run
+
+```
+pip install tqdm sqlalchemy lxml requests python-dateutil
+```
+
 Pygameday was developed and tested using Python 3.
 
 ## Quickstart
