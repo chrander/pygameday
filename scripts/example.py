@@ -6,18 +6,12 @@ Runs pygameday using the GameDayClient
 from datetime import datetime
 from pygameday import GameDayClient
 
-try:
-    # Look for Database URI in config_mine.py first.
-    # config_mine.py should not be version controlled, because it can contain username/password information.
-    # config.py, a default config file, is version controlled. It should not have any usernames, passwords, or other
-    # potentially sensitive information.
-    from config_mine import DATABASE_URI
-except ImportError:
-    from config import DATABASE_URI
 
+database_uri = "sqlite:///gameday.db"  # sqlite database on the local machine
+# database_uri = "postgresql+psycopg2://user:passwd@localhost/gameday"  # Example Postgres database URI
 
 start_date = datetime(2018, 5, 11)
-end_date = datetime(2018, 5, 31)
+end_date = datetime(2018, 5, 12)
 
-client = GameDayClient(DATABASE_URI, n_workers=4)
+client = GameDayClient(database_uri, n_workers=1)  # Increase n_workers to make processing faster
 client.process_date_range(start_date, end_date)

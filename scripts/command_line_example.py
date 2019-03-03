@@ -46,8 +46,8 @@ def usage():
     print(
         """ 
         USAGE:
-          $ python main_cli.py [start_date]
-          $ python main_cli.py [start_date] [end_date]
+          $ python command_line_example.py [start_date]
+          $ python command_line_example.py [start_date] [end_date]
 
             The parameters start_date and end_date must in the format 'yyyy-mm-dd'
 
@@ -59,8 +59,8 @@ def usage():
           Make certain that you have configured your database settings correctly in config.py!
 
         EXAMPLES:
-          $ python main_cli.py 2015-05-29
-          $ python main_cli.py 2015-05-29 2015-06-02
+          $ python command_line_example.py 2015-05-29
+          $ python command_line_example.py 2015-05-29 2015-06-02
         """)
 
 
