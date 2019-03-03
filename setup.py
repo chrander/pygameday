@@ -5,15 +5,17 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
+version = '0.3.5'
+
 setuptools.setup(
-    name = 'pygameday',
-    version = '0.3.5',
-    author = 'Chris Anderson',
-    author_email = 'christian.c.anderson@gmail.com',
-    packages = setuptools.find_packages(),
-    url = 'https://github.com/chrander/pygameday',
+    name='pygameday',
+    version=version,
+    author='Chris Anderson',
+    author_email='christian.c.anderson@gmail.com',
+    packages=setuptools.find_packages(),
+    url='https://github.com/chrander/pygameday',
     license='LICENSE.txt',
-    description = 'Module for scraping, parsing, and ingesting MLB GameDay data into a database',
+    description='Module for scraping, parsing, and ingesting MLB GameDay data into a database',
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
@@ -23,7 +25,7 @@ setuptools.setup(
         'requests',
         'lxml'
     ],
-    download_url = 'https://github.com/chrander/pygameday/tarball/0.3.5',
+    download_url = 'https://github.com/chrander/pygameday/archive/v{}.tar.gz'.format(version),
     keywords = ['baseball', 'gameday', 'database', 'scraping'],
     classifiers=[
         "Programming Language :: Python :: 3",

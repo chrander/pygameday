@@ -100,7 +100,3 @@ Here are some example URIs.
 
 SQLAlchemy's [engine documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html)
 has additional details about the dialects it supports.
-
-
-## Developer 
-Chris Anderson, <chrand3r [at] gmail [dot] com>
