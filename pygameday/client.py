@@ -11,7 +11,6 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from . import util
 from . import parse
 from . import scrape
 from .models import Game
@@ -22,13 +21,13 @@ from .models import HitInPlay
 from .models import create_db_tables
 from .models import db_connect
 
-logger = logging.getLogger('pygameday')
+logger = logging.getLogger(__name__)
 
 
 class GameDayClient(object):
     """Class for ingesting GameDay data into a database
     """
-    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4, log_level="INFO"):
+    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4):
         """Constructor
 
         Initializes database connection and session
@@ -49,12 +48,7 @@ class GameDayClient(object):
 
         n_workers : int
             The number of parallel workers to use when ingesting games
-
-        log_level : str
-            The logging level. Must be one of NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL [Default: "INFO"]
         """
-        util.set_logging_level(log_level)
-
         engine = db_connect(database_uri)
         create_db_tables(engine)
         logger.info("Initialized GameDayClient using '{}'".format(database_uri))

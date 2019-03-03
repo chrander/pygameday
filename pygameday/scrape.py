@@ -4,11 +4,12 @@
 """
 import requests
 import logging
+from datetime import datetime
 
 from .constants import GD_SERVER
 from .constants import GD_BASE_PATH
 
-logger = logging.getLogger('pygameday')
+logger = logging.getLogger(__name__)
 
 
 def get_url(url):
@@ -158,7 +159,7 @@ def test():
     day = 4
 
     print("Fetching epg page")
-    epg_page = fetch_epg(year, month, day)
+    epg_page = fetch_epg(datetime(year, month, day))
     save_page(epg_page, 'epg.xml')
 
     game_directory = '/components/game/mlb/year_2014/month_04/day_04/gid_2014_04_04_anamlb_houmlb_1'

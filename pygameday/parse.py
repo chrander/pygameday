@@ -16,7 +16,7 @@ from .models import HitInPlay
 from .models import Pitch
 from .models import Player
 
-logger = logging.getLogger('pygameday')
+logger = logging.getLogger(__name__)
 
 
 def parse_epg(epg_page):

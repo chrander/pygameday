@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = 'pygameday',
-    version = '0.3.4',
+    version = '0.3.5',
     author = 'Chris Anderson',
     author_email = 'christian.c.anderson@gmail.com',
     packages = setuptools.find_packages(),
@@ -23,7 +23,7 @@ setuptools.setup(
         'requests',
         'lxml'
     ],
-    download_url = 'https://github.com/chrander/pygameday/tarball/0.3.4',
+    download_url = 'https://github.com/chrander/pygameday/tarball/0.3.5',
     keywords = ['baseball', 'gameday', 'database', 'scraping'],
     classifiers=[
         "Programming Language :: Python :: 3",
