@@ -47,8 +47,8 @@ def fetch_master_scoreboard(date):
     dict
         Dictionary of games data on the given day
     """
-    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/master_scoreboard.json".format(GD_SERVER, GD_BASE_PATH,
-                                                                                        date.year, date.month, date.day)
+    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/master_scoreboard.json".format(
+        GD_SERVER, GD_BASE_PATH, date.year, date.month, date.day)
     response = requests.get(url)
     if response.ok:
         return response.json()
@@ -72,8 +72,8 @@ def fetch_epg(date):
         place on the given day.
 
     """
-    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(GD_SERVER, GD_BASE_PATH,
-                                                                         date.year, date.month, date.day)
+    url = "http://{}{}/year_{:d}/month_{:02d}/day_{:02d}/epg.xml".format(
+        GD_SERVER, GD_BASE_PATH, date.year, date.month, date.day)
     return get_url(url)
 
 

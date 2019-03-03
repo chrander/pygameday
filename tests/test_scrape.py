@@ -7,6 +7,10 @@ from pygameday import scrape
 
 
 class TestScraping(unittest.TestCase):
+
+    # TODO: Implement scraping tests
+
+    # These kinds of tests are indirectly addressed in test_GameDayClient.py
     def test_fetch_master_scoreboard(self):
         date = datetime(2018, 4, 8)
         sb = scrape.fetch_master_scoreboard(date)

@@ -13,7 +13,7 @@ setup(
     install_requires=[
         'python-dateutil',
         'sqlalchemy',
-
+        'tqdm'
     ],
     download_url = 'https://github.com/chrander/pygameday/tarball/0.1',
     keywords = ['baseball', 'gameday', 'database', 'scraping'],

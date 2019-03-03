@@ -174,7 +174,6 @@ class GameDayClient(object):
                 for game in games:
                     self.process_game(game)
 
-
     # TODO: clean up this function
     def process_game(self, game):
         """Ingests a single game's GameDay data
