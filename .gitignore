@@ -18,6 +18,8 @@ logs/
 build/
 dist/
 MANIFEST
+.eggs/
+*.egg-info/
 
 # Data
 *.json
