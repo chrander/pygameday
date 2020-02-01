@@ -12,9 +12,9 @@ whether you're using SQLite, Postgres, or some other implementation.
 All you do is specify a URI to the database, and you're up and 
 running.
 
-Pygameday is build on [SQLAlchemy](http://www.sqlalchemy.org/), and 
-should therefore be compatible with any database that SQLAlchemy 
-supports. As of this writing, the following dialects are supported:
+Pygameday is built on [SQLAlchemy](http://www.sqlalchemy.org/), and 
+should be compatible with any database that SQLAlchemy 
+supports. The following dialects are supported:
 
 * SQLite
 * PostgreSQL
