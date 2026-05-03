@@ -1,22 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import unittest
 from datetime import datetime
-import json
-from pprint import pprint
 
 from pygameday import scrape
 
 
 class TestScraping(unittest.TestCase):
 
-    # TODO: Implement scraping tests
-
-    # These kinds of tests are indirectly addressed in test_GameDayClient.py
-    def test_fetch_master_scoreboard(self):
-        date = datetime(2018, 4, 8)
-        sb = scrape.fetch_master_scoreboard(date)
-        with open('master_scoreboard.json', 'w') as f:
-            json.dump(sb, f)
-        pprint(sb)
+    def test_fetch_statcast_data(self):
+        """Verify that a known regular-season date returns pitch data."""
+        date = datetime(2023, 7, 4)
+        df = scrape.fetch_statcast_data(date, date)
+        self.assertIsNotNone(df)
+        self.assertFalse(df.empty)
+        self.assertIn('game_pk', df.columns)
+        self.assertIn('pitch_type', df.columns)
+        self.assertIn('release_speed', df.columns)
+        self.assertIn('plate_x', df.columns)
 
 
 if __name__ == '__main__':

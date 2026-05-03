@@ -1,155 +1,104 @@
 #!/usr/bin/env python
-from dateutil import parser
+# -*- coding: utf-8 -*-
+import unittest
+from datetime import datetime
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
-from pygameday.models import Game, AtBat, Pitch, Player
-from pygameday.models import create_db_tables
-from pygameday.models import db_connect
+from pygameday.models import Game, AtBat, Pitch, Player, HitInPlay
+from pygameday.models import create_db_tables, db_connect
 
 
-database_uri = "sqlite:///gameday.db"  # sqlite database on the local machine
+class TestDatabase(unittest.TestCase):
 
+    def setUp(self):
+        self.engine = db_connect('sqlite:///:memory:')
+        create_db_tables(self.engine)
+        self.session = sessionmaker(bind=self.engine)()
 
-def test():
-    """Test database functionality """
+    def tearDown(self):
+        self.session.close()
 
-    engine = db_connect(database_uri)
-    create_db_tables(engine)
-    sm = sessionmaker(bind=engine)
-    session = sm()
+    def test_insert_game_with_at_bat_and_pitch(self):
+        player = Player(player_id=116380, first='Mike', last='Trout',
+                        bats='R', throws='R')
+        self.session.add(player)
+        self.session.commit()
 
-    player = gen_fake_player_data()
-    game = gen_fake_game_data()
-    atbat = gen_fake_atbat_data()
-    pitch = gen_fake_pitch_data()
-
-    atbat.pitches.append(pitch)
-    game.at_bats.append(atbat)
-    # game.pitches.append(pitch)
-
-    try:
-        session.add(player)
-        session.commit()
-        print("Committed player: {}".format(str(player)))
-
-    except IntegrityError:
-        session.rollback()
-        msg = "IntegrityError when inserting player: {}".format(str(player))
-        print(msg)
-
-    except Exception as ex:
-        session.rollback()
-        msg = "Exception when inserting player"
-        print(msg)
-        print(ex)
-
-    try:
-        session.add(game)
-        session.commit()
-        print("Committed game: {}".format(str(game)))
-
-    except Exception as ex:
-        session.rollback()
-        msg = "Exception when inserting game"
-        print(msg)
-        print(ex)
-
-
-def gen_fake_game_data():
-    """Creates an example Game object"""
-    game = Game(
-        gameday_id='2014/04/04/atlmlb-wasmlb-1',
-        venue='Nationals Park',
-        start_time=parser.parse('2014-04-04T13:05:00-0400'),
-        game_data_directory='/components/game/mlb/year_2014/month_04/day_04/gid_2014_04_04_atlmlb_wasmlb_1',
-        home_name_abbrev='WSH',
-        home_team_city='Washington',
-        home_team_name='Nationals',
-        away_name_abbrev='ATL',
-        away_team_city='Atlanta',
-        away_team_name='Braves',
-        home_team_runs=1,
-        away_team_runs=2
-    )
-
-    return game
-
-
-def gen_fake_atbat_data():
-    """Creates an example AtBat object"""
-    at_bat = AtBat(
-        inning=1,
-        inning_half='T',
-        n_pitches=3,
-        n_balls=1,
-        n_strikes=1,
-        n_outs=1,
-        batter_id=116380,
-        pitcher_id=116380,
-        batter_stance='R',
-        des='Mike Trout homers to left center',
-        event='Home Run'
-    )
-
-    return at_bat
-
-
-def gen_fake_pitch_data():
-    """Creates an example Pitch object"""
-    pitch = Pitch(
-        inning=1,
-        inning_half='T',
-        des='Ball',
-        result_type='B',
-        gameday_sv_id='140404_191151',
-        x=92.70,
-        y=181.33,
-        start_speed=85.7,
-        end_speed=78.9,
-        sz_top=3.66,
-        sz_bot=1.75,
-        pfx_x=-2.86,
-        pfx_z=5.87,
-        px=0.141,
-        pz=1.004,
-        x0=-2.59,
-        y0=50.0,
-        z0=5.953,
-        vx0=7.645,
-        vy0=-125.205,
-        vz0=-7.503,
-        ax=-4.503,
-        ay=26.885,
-        az=-22.844,
-        break_y=23.8,
-        break_angle=7.0,
-        break_length=4.9,
-        pitch_type='FT',
-        type_conf=0.890,
-        zone=11,
-        nasty=59,
-        spin_dir=230.193,
-        spin_rate=1042.434
+        pitch = Pitch(
+            at_bat_pitch_num=0,
+            inning=1, inning_half='Top',
+            des='Ball', result_type='B',
+            pitch_type='FF', zone=11,
+            release_speed=96.4, effective_speed=94.1,
+            plate_x=0.14, plate_z=2.5,
+            sz_top=3.5, sz_bot=1.6,
+            pfx_x=-4.2, pfx_z=8.1,
+            release_pos_x=-1.5, release_pos_y=54.2, release_pos_z=6.1,
+            vx0=6.3, vy0=-140.1, vz0=-5.2,
+            ax=-8.1, ay=28.4, az=-14.3,
+            spin_rate=2340.0, spin_axis=210.0, release_extension=6.2,
         )
 
-    return pitch
+        at_bat = AtBat(
+            at_bat_number=1,
+            inning=1, inning_half='Top',
+            n_pitches=1, n_balls=1, n_strikes=0, n_outs=0,
+            batter_id=116380, pitcher_id=999999,
+            batter_stance='R',
+            des='Ball', events=None,
+        )
+        at_bat.pitches.append(pitch)
 
+        game = Game(
+            game_pk=748532,
+            game_date=datetime(2023, 7, 4),
+            game_type='R',
+            venue_name='Angel Stadium',
+            home_team='LAA', away_team='HOU',
+            home_score=3, away_score=5,
+        )
+        game.at_bats.append(at_bat)
+        self.session.add(game)
+        self.session.commit()
 
-def gen_fake_player_data():
-    """Generates an example Player object"""
-    player = Player(
-            player_id=116380,
-            first="Raul",
-            last="Ibanez",
-            boxname="Ibanez",
-            rl="R",
-            bats="L",
-            )
+        result = self.session.query(Game).filter_by(game_pk=748532).first()
+        self.assertIsNotNone(result)
+        self.assertEqual(result.home_team, 'LAA')
+        self.assertEqual(len(result.at_bats), 1)
+        self.assertEqual(len(result.at_bats[0].pitches), 1)
 
-    return player
+    def test_duplicate_game_raises_integrity_error(self):
+        game1 = Game(game_pk=111111, game_date=datetime(2023, 7, 4),
+                     home_team='BOS', away_team='NYY')
+        game2 = Game(game_pk=111111, game_date=datetime(2023, 7, 4),
+                     home_team='BOS', away_team='NYY')
+        self.session.add(game1)
+        self.session.commit()
+        self.session.add(game2)
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
+
+    def test_hit_in_play(self):
+        game = Game(game_pk=222222, game_date=datetime(2023, 7, 4),
+                    home_team='LAD', away_team='SFG')
+        hip = HitInPlay(
+            batter_id=660271, pitcher_id=543037,
+            inning=3, inning_half='Top',
+            bb_type='fly_ball',
+            hc_x=120.5, hc_y=90.3,
+            launch_speed=105.2, launch_angle=28.0,
+            des='Mookie Betts homers (12)',
+        )
+        game.hits_in_play.append(hip)
+        self.session.add(game)
+        self.session.commit()
+
+        result = self.session.query(Game).filter_by(game_pk=222222).first()
+        self.assertEqual(len(result.hits_in_play), 1)
+        self.assertAlmostEqual(result.hits_in_play[0].launch_speed, 105.2)
 
 
 if __name__ == '__main__':
-    test()
+    unittest.main()

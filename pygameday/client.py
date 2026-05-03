@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Defines GameDayClient, the primary class for scraping, parsing, and ingesting MLB GameDay data.
-"""
+"""Defines GameDayClient, the primary class for ingesting MLB Statcast data."""
 import logging
 from datetime import timedelta
-from concurrent.futures import ProcessPoolExecutor
 
 from tqdm import tqdm
 from sqlalchemy import func
@@ -13,61 +11,40 @@ from sqlalchemy.orm import sessionmaker
 
 from . import parse
 from . import scrape
-from .models import Game
-from .models import Player
-from .models import AtBat
-from .models import Pitch
-from .models import HitInPlay
-from .models import create_db_tables
-from .models import db_connect
+from .models import Game, Player, AtBat, Pitch, HitInPlay, create_db_tables, db_connect
 
 logger = logging.getLogger(__name__)
 
 
-class GameDayClient(object):
-    """Class for ingesting GameDay data into a database
-    """
-    def __init__(self, database_uri, ingest_spring_training=False, n_workers=4):
-        """Constructor
+class GameDayClient:
+    """Ingests MLB Statcast data (via pybaseball) into a SQLAlchemy-backed database."""
 
-        Initializes database connection and session
-        Creates database tables if they do not already exist
-        Sets up logging
+    def __init__(self, database_uri, ingest_spring_training=False):
+        """Initialize the client and connect to the database.
 
         Parameters
         ----------
         database_uri : str
-            The URI for the database.
-            Examples: "sqlite:///gameday.db"  (sqlite)
-                      "postgresql+psycopg2://user:passwd@localhost/gameday"  (Postgres via psycopg2)
-
-            See SQLAlchemy's documentation for valid database URIs.
-
+            SQLAlchemy connection string, e.g. "sqlite:///gameday.db" or
+            "postgresql+psycopg2://user:passwd@localhost/gameday".
         ingest_spring_training : bool
-            Whether to ingest spring training games. [Default: False]
-
-        n_workers : int
-            The number of parallel workers to use when ingesting games
+            Whether to ingest spring training ('S') and exhibition ('E') games.
         """
         engine = db_connect(database_uri)
         create_db_tables(engine)
-        logger.info("Initialized GameDayClient using '{}'".format(database_uri))
+        logger.info("Initialized GameDayClient using '%s'", database_uri)
 
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training
-        self.n_workers = n_workers
-        self.player_ids = set()  # Player IDs that have already been inserted into the database
-        self.gameday_ids = set()  # Game IDs that have already been inserted into the database
+        self.game_pks = set()
+        self.player_ids = set()
 
-        self.update_inserted_data()  # Update the set of players and games that are already inserted
+        self.update_inserted_data()
 
     def db_stats(self):
-        """Prints information about the current database contents
-        """
+        """Print a summary of row counts for each table in the database."""
         engine = db_connect(self.database_uri)
-        session_maker = sessionmaker(bind=engine)
-        session = session_maker()
-
+        session = sessionmaker(bind=engine)()
         game_count = session.query(func.count(Game.game_id)).scalar()
         player_count = session.query(func.count(Player.player_id)).scalar()
         atbat_count = session.query(func.count(AtBat.at_bat_id)).scalar()
@@ -90,222 +67,98 @@ class GameDayClient(object):
         print("")
 
     def update_inserted_data(self):
-        """Updates the set of player IDs and Game GameDay IDs that already exist in the database
-
-        Keeping track of games and players already inserted saves us from trying to insert objects that are already
-        there.  It also helps with limiting the number of times we have to query the database.
-        """
+        """Refresh in-memory sets of already-ingested game_pks and player_ids."""
         engine = db_connect(self.database_uri)
-        session_maker = sessionmaker(bind=engine)
-        session = session_maker()
-
-        self.gameday_ids = {gid[0] for gid in session.query(Game.gameday_id)}
-        self.player_ids = {pid[0] for pid in session.query(Player.player_id)}
+        session = sessionmaker(bind=engine)()
+        self.game_pks = {row[0] for row in session.query(Game.game_pk)}
+        self.player_ids = {row[0] for row in session.query(Player.player_id)}
         session.close()
-
-        logger.debug('There are currently {} games and {} players in the database'.format(
-                len(self.gameday_ids), len(self.player_ids)))
+        logger.debug('Database contains %d games and %d players',
+                     len(self.game_pks), len(self.player_ids))
 
     def process_date_range(self, start_date, end_date):
-        """Ingests GameDay data within a range of specified dates
-
-        All dates within the begin date and end date are processed.
+        """Ingest all games within an inclusive date range.
 
         Parameters
         ----------
-        start_date: datetime.datetime
-            The first date to process.
-            Can also be a string, in which case the function will parse it into a datetime object.
-
-        end_date: datetime.date object
-            The final date to process.
-            Can also be a string, in which case the function will parse it into a datetime object.
+        start_date, end_date : datetime.datetime
         """
         if end_date < start_date:
-            logger.info('Swapping start date and end date to preserve causality')
-            tmp = end_date
-            end_date = start_date
-            start_date = tmp
+            start_date, end_date = end_date, start_date
 
-        # Construct the dates to iterate over. We add 1 to the range so that it is inclusive of begin_date and end_date.
-        date_range = [start_date + timedelta(day) for day in range((end_date - start_date).days + 1)]
-
-        logger.info('Ingesting GameDay data within date range {} to {}'.format(start_date.date(), end_date.date()))
+        date_range = [start_date + timedelta(days=d)
+                      for d in range((end_date - start_date).days + 1)]
+        logger.info('Ingesting Statcast data from %s to %s',
+                    start_date.date(), end_date.date())
 
         for date in tqdm(date_range, total=len(date_range)):
             self.process_date(date)
 
     def process_date(self, date):
-        """Ingests one day of GameDay data
+        """Ingest all games played on a single date.
 
         Parameters
         ----------
         date : datetime.datetime
-            The date to process
         """
-        scoreboard = scrape.fetch_master_scoreboard(date)
+        df = scrape.fetch_statcast_data(date, date)
+        if df is None or df.empty:
+            logger.warning('No Statcast data returned for %s', date.date())
+            return
 
-        # Check if there are games on the date. If not, skip it.
-        game_data = scoreboard['data']['games']
-        if 'game' not in game_data or len(game_data['game']) == 0:
-            logger.warning('No games found on {}'.format(date.date()))
+        for game_pk, gdf in df.groupby('game_pk'):
+            game_pk = int(game_pk)
 
-        else:
-            games = scoreboard['data']['games']['game']
+            if game_pk in self.game_pks:
+                logger.warning('Skipping game %d (already in DB)', game_pk)
+                continue
 
-            if self.n_workers > 1:
-                # Process games in parallel
-                with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
-                    executor.map(self.process_game, games)
-            else:
-                # Process games serially
-                for game in games:
-                    self.process_game(game)
+            game_type = gdf.iloc[-1].get('game_type', '')
+            if not self.ingest_spring_training and game_type in ('S', 'E'):
+                logger.info('Skipping spring training/exhibition game %d', game_pk)
+                continue
 
-    # TODO: clean up this function
-    def process_game(self, game):
-        """Ingests a single game's GameDay data
+            self._process_game(game_pk, gdf)
 
-        Parameters
-        ----------
-        game : dict
-            The game to process
-        """
-        # Create a new connection for each game so we don't run into weirdness with connections shared across
-        # processes or threads
+    def _process_game(self, game_pk, gdf):
+        """Parse and insert a single game's data (players, at-bats, pitches, hits in play)."""
         engine = db_connect(self.database_uri)
-        session_maker = sessionmaker(bind=engine)
-        session = session_maker()
+        session = sessionmaker(bind=engine)()
+        logger.info('Processing game %d', game_pk)
 
-        game_dir = game["game_data_directory"]
-        gameday_id = game["id"]
+        try:
+            db_games = parse.parse_games(gdf)
+            if not db_games:
+                logger.warning('No game object parsed for game_pk %d', game_pk)
+                return
+            db_game = db_games[0]
+            db_game.at_bats = parse.parse_at_bats(gdf)
+            db_game.hits_in_play = parse.parse_hits_in_play(gdf)
+            db_players = parse.parse_players(gdf)
 
-        if gameday_id in self.gameday_ids:
-            # The game has been processed and should already be in the database
-            logger.warning("Skipping game: {}. It's already in the DB.".format(gameday_id))
-            return
-
-        # Parse the game
-        db_game = parse.parse_game(game)
-
-        # If no data comes back, the game probably wasn't Final. Abort.
-        if db_game is None:
-            logger.warning("Skipping game: {}. It contained no data, probably because its status isn't Final".format(
-                gameday_id))
-            return
-
-        # If the game is a spring training game, skip it if ingest_spring_training is False
-        # A games type of 'S' (spring training) or 'E' (exhibition) means we won't ingest it if the flag is False
-        if not self.ingest_spring_training and (db_game.game_type == "S" or db_game.game_type == "E"):
-            logger.warning("Skipping game: {}. It's a spring training or exhibition game.".format(gameday_id))
-            return
-
-        logger.info("Processing game ID {}".format(gameday_id))
-
-        #
-        # Fetch game data
-        #
-        hit_chart_page = scrape.fetch_hit_chart(game_dir)
-        players_page = scrape.fetch_players(game_dir)
-        inning_all_page = scrape.fetch_inning_all(game_dir)
-
-        # Do some error checking
-        if hit_chart_page is None:
-            logger.error("Error fetching hit chart page for game {}".format(gameday_id))
-        if players_page is None:
-            logger.error("Error fetching players page for game {}".format(gameday_id))
-        if inning_all_page is None:
-            logger.error("Error fetching inning events page for game {}".format(gameday_id))
-
-        #
-        # Parse AtBats (including Pitches), HitsInPlay, Players
-        #
-        db_at_bats = parse.parse_inning_all(inning_all_page)  # Appends Pitches to AtBats
-        db_hips = parse.parse_hit_chart(hit_chart_page)
-        db_players = parse.parse_players(players_page)
-
-        #
-        # Append the AtBats to the Game. Note that Pitches are appended to AtBats
-        # when the AtBats are parsed, so we don't have to do anything with Pitches.
-        #
-        db_game.at_bats.extend(db_at_bats)
-
-        #
-        # Append the hits in play to the Game
-        #
-        db_game.hits_in_play.extend(db_hips)
-
-        #
-        # Add the players using the database session and commit
-        # This has to be done one at a time (instead of using session.add_all)
-        # because add_all will fail if ANY of the players in the list are
-        # duplicated, which could lead to some players being excluded from
-        # the database.
-        #
-        for player in db_players:
-
-            if int(player.player_id) in self.player_ids:
-                # The player has been processed and should already be in the database
-                logger.debug("Skipping player {} because it has already been processed.".format(player.player_id))
-
-            else:
-                # We haven't inserted this player yet
-                error_occurred = False
-
+            for player in db_players:
+                if player.player_id in self.player_ids:
+                    continue
                 try:
                     session.add(player)
                     session.commit()
-
-                except IntegrityError:
-                    # If an IntegrityError occurs, it's probably because the data
-                    # has already been inserted.
-                    session.rollback()
-                    msg = ("IntegrityError when inserting player {}, "
-                           "probably because it's already in the database".format(str(player)))
-                    logger.warning(msg)
-                    error_occurred = True
-
-                except Exception as ex:
-                    # Just log other exceptions for now, and continue
-                    session.rollback()
-                    logger.exception('An error occurred', ex)
-                    error_occurred = True
-
-                if not error_occurred:
                     self.player_ids.add(player.player_id)
-
-        #
-        # Insert the game data
-        #
-        if db_game.gameday_id in self.gameday_ids:
-            # The game has been processed and should already be in the database
-            logger.info("Skipping game: {} because it has already been ingested.".format(db_game.gameday_id))
-
-        else:
-            # We haven't inserted this game yet
-            error_occurred = False
+                except IntegrityError:
+                    session.rollback()
+                except Exception:
+                    session.rollback()
+                    logger.exception('Error inserting player %d', player.player_id)
 
             try:
                 session.add(db_game)
                 session.commit()
-
+                self.game_pks.add(game_pk)
             except IntegrityError:
-                # If an IntegrityError occurs, it's probably because the data
-                # has already been inserted.
                 session.rollback()
-                msg = ("IntegrityError when inserting game: {}, "
-                       "probably because it's already in the database".format(db_game.gameday_id))
-                logger.error(msg)
-                error_occurred = True
-
-            except Exception as ex:
-                # Just log other exceptions for now, and continue
+                logger.error('IntegrityError inserting game %d (already exists)', game_pk)
+            except Exception:
                 session.rollback()
-                logger.exception('Something went wrong', ex)
-                error_occurred = True
+                logger.exception('Error inserting game %d', game_pk)
 
-            if not error_occurred:
-                self.gameday_ids.add(db_game.gameday_id)
-
-        # We are done
-        session.close()
+        finally:
+            session.close()
