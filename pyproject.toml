@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygameday"
+version = "0.3.5"
+description = "Module for scraping, parsing, and ingesting MLB GameDay data into a database"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Chris Anderson", email = "christian.c.anderson@gmail.com" }]
+requires-python = ">=3.11"
+keywords = ["baseball", "gameday", "database", "scraping"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "tqdm",
+    "sqlalchemy",
+    "pybaseball",
+    "pandas",
+]
+
+[project.urls]
+Homepage = "https://github.com/chrander/pygameday"
+Repository = "https://github.com/chrander/pygameday"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pygameday*"]
+
+[dependency-groups]
+dev = [
+    "twine",
+    "build",
+]

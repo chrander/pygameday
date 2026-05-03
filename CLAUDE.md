@@ -9,20 +9,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install dependencies
-pip install tqdm sqlalchemy python-dateutil requests lxml
+# Install project + dev dependencies (creates .venv automatically)
+uv sync --group dev
 
 # Run all tests
-python -m unittest discover tests/
+uv run python -m unittest discover tests/
 
 # Run a single test file
-python -m unittest tests.test_GameDayClient
+uv run python -m unittest tests.test_GameDayClient
 
 # Run a single test method
-python -m unittest tests.test_GameDayClient.TestGameDayClient.test_ingest
+uv run python -m unittest tests.test_GameDayClient.TestGameDayClient.test_ingest
 
 # Build distribution
-make dist
+make dist          # runs `uv build`
 
 # Clean build artifacts
 make clean
