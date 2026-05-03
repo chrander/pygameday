@@ -13,13 +13,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 uv sync --group dev
 
 # Run all tests
-uv run python -m unittest discover tests/
+uv run pytest
 
 # Run a single test file
-uv run python -m unittest tests.test_GameDayClient
+uv run pytest tests/test_StatcastClient.py
 
-# Run a single test method
-uv run python -m unittest tests.test_GameDayClient.TestGameDayClient.test_ingest
+# Run a single test by name
+uv run pytest tests/test_StatcastClient.py::test_ingest
 
 # Build distribution
 make dist          # runs `uv build`
@@ -38,17 +38,17 @@ Data flows through four layers:
 
 3. **`models.py`** — SQLAlchemy ORM models: `Game`, `AtBat`, `Pitch`, `Player`, `HitInPlay`. `db_connect()` creates the engine; `create_db_tables()` creates tables if missing.
 
-4. **`client.py`** — `GameDayClient` orchestrates everything. Key design points:
+4. **`client.py`** — `StatcastClient` orchestrates everything. Key design points:
    - Uses `ProcessPoolExecutor` for parallel game processing; each worker opens its own DB connection to avoid threading issues.
    - Maintains in-memory sets (`inserted_game_ids`, `inserted_player_ids`) to skip duplicates without repeated DB queries.
    - `process_game()` is the per-game worker: scrapes → parses → inserts a complete game in one transaction.
    - `process_date_range()` iterates dates and calls `process_date()` → `process_game()` in parallel.
 
-**Public API:** `from pygameday import GameDayClient` — `GameDayClient` is the only export.
+**Public API:** `from pygameday import StatcastClient` — `StatcastClient` is the only export.
 
 ## Database
 
-SQLAlchemy handles all DB access; pass any SQLAlchemy connection URI to `GameDayClient(database_uri)`. Tested dialects include SQLite, PostgreSQL, MySQL. Tables use `Sequence`-based primary keys and foreign keys for `Game → AtBat → Pitch` and `Game → HitInPlay`.
+SQLAlchemy handles all DB access; pass any SQLAlchemy connection URI to `StatcastClient(database_uri)`. Tested dialects include SQLite, PostgreSQL, MySQL. Tables use `Sequence`-based primary keys and foreign keys for `Game → AtBat → Pitch` and `Game → HitInPlay`.
 
 ## Key Behaviors
 

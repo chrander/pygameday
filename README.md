@@ -1,117 +1,109 @@
 # pygameday
-Pygameday scrapes Major League Baseball (MLB) [GameDay](http://mlb.mlb.com/mlb/gameday/#) 
-data, parses it, and inserts it into a database of your choosing for 
-later analysis.
+Pygameday fetches MLB [Statcast](https://baseballsavant.mlb.com/) pitch-by-pitch data
+and ingests it into a relational database of your choosing for later analysis.
 
-Games, Players, At-Bats, Hits In Play, and Pitches are the data types
-captured.
+Data captured per game: Games, Players, At-Bats, Pitches, and Hits In Play — including
+full Statcast physics (release speed, spin rate, break, launch angle, exit velocity, etc.).
 
-One of the motivations behind creating pygameday was to make the 
-database backend transparent; you should not have to worry about
-whether you're using SQLite, Postgres, or some other implementation.
-All you do is specify a URI to the database, and you're up and 
-running.
+Data is sourced from [Baseball Savant](https://baseballsavant.mlb.com/) via
+[pybaseball](https://github.com/jldbc/pybaseball). Coverage begins with the 2015 season
+(when Statcast was fully deployed across all stadiums).
 
-Pygameday is built on [SQLAlchemy](http://www.sqlalchemy.org/), and 
-should be compatible with any database that SQLAlchemy 
-supports. The following dialects are supported:
+Pygameday is built on [SQLAlchemy](http://www.sqlalchemy.org/) and is compatible with any
+database it supports:
 
 * SQLite
 * PostgreSQL
 * MySQL
 * Oracle
 * Microsoft SQL Server
-* Firebird
-* Sybase
 
-It should be noted that I've tested only SQLite and Postgres.
+SQLite and PostgreSQL have been tested.
 
 ## Examples
-The  [examples](./examples) directory contains a documented
-[Jupyter notebook](./examples/example.ipynb) and a more stripped-down example 
-[script](./examples/example.py). You can also refer to the Quickstart section below.
-
-
+The [examples](./examples) directory contains a documented
+[Jupyter notebook](./examples/example.ipynb) and a stripped-down
+[script](./examples/example.py).
 
 ## Installation
-Install pygameday using `pip`:
 
 ```
 pip install pygameday
 ```
 
-Pygameday depends on tqdm, sqlalchemy, lxml, requests, and python-dateutil. If
-those packages are not automatically installed, run
-
-```
-pip install tqdm sqlalchemy lxml requests python-dateutil
-```
-
-Pygameday was developed and tested using Python 3.
+Requires Python 3.11+. Dependencies (`pybaseball`, `sqlalchemy`, `pandas`, `tqdm`) are
+installed automatically.
 
 ## Quickstart
-Run pygameday by instantiating a GameDayClient.
 
-### Using the GameDayClient
-First, instantiate the database client by specifying a database URI. 
-This example creates an SQLite database
-named `gameday.db` in the current directory, but you can substitute
-a URI for your database flavor of choice, as long as the database is supported
-by SQLAlchemy.
+### Using the StatcastClient
 
-The `n_workers` parameter determines how many parallel processes are
-used to insert game data. By default, `n_workers` is set to 4. To handle database 
-inserts serially, set `n_workers=1`. Serial processing tends to work better for SQLite
-databases, which is why it's used in this example, but a server-based 
-database implementation should be able to handle parallel processes.
+Instantiate the client with a database URI. The database and tables are created
+automatically if they don't exist.
 
 ```python
-from pygameday import GameDayClient
+from pygameday import StatcastClient
+
 database_uri = "sqlite:///gameday.db"
-client = GameDayClient(database_uri, n_workers=1)
+client = StatcastClient(database_uri)
 ```
 
-Ingest games that occurred on a single day by specifying a standard Python datetime.
+Ingest all games on a single day:
+
 ```python
 from datetime import datetime
 
-date_to_process = datetime(2015, 5, 1)  # Ingest games on May 1, 2015
-client.process_date(date_to_process)
+client.process_date(datetime(2023, 7, 4))
 ```
 
-You can also ingest games within a date range.
+Ingest a date range (inclusive):
+
 ```python
-# Ingest games between May 1, 2015 and May 3, 2015
-start_date = datetime(2015, 5, 1)
-end_date = datetime(2015, 5, 3)
+start_date = datetime(2023, 4, 1)
+end_date   = datetime(2023, 4, 7)
 client.process_date_range(start_date, end_date)
 ```
 
-After ingesting data, use any tool you like to verify that the 
-data is in the database. Here's an example using [pandas](http://pandas.pydata.org/).
+By default spring training and exhibition games are skipped. To include them:
+
+```python
+client = StatcastClient(database_uri, ingest_spring_training=True)
+```
+
+### Querying the data
+
+After ingesting, query with any tool that speaks SQL. Example using pandas:
 
 ```python
 import pandas as pd
 from sqlalchemy import create_engine
-engine = create_engine(database_uri)
 
-# Execute SQL queries against the database we just created
-data = pd.read_sql("SELECT * FROM games LIMIT 5", engine)
-data.head()
+engine = create_engine(database_uri)
+pitches = pd.read_sql("SELECT * FROM pitches LIMIT 10", engine)
+pitches.head()
 ```
 
-## Database Configuration
-You  need to specify a valid database URI for pygameday to work.
-Here are some example URIs.
+Key tables:
 
-**SQLite**: 
-* `"sqlite:///example.db"  # File in the current directory`
-* `"sqlite:////absolute/path/to/example.db"  # Absolute path to file (Unix/Mac)`
-* `"sqlite:///C:\absolute\path\to\example.db"  # Absolute path to file (Windows)`
+| Table | Description |
+|---|---|
+| `games` | One row per game (`game_pk`, teams, score, date) |
+| `at_bats` | One row per plate appearance (`events`, balls/strikes/outs) |
+| `pitches` | One row per pitch (velocity, location, movement, spin) |
+| `hits_in_play` | Balls put in play (`launch_speed`, `launch_angle`, `hc_x/y`) |
+| `players` | Unique batters and pitchers (MLBAM ID, name, bats/throws) |
+
+## Database Configuration
+
+Pass any valid SQLAlchemy connection URI to `StatcastClient`.
+
+**SQLite**:
+* `"sqlite:///example.db"` — file in the current directory
+* `"sqlite:////absolute/path/to/example.db"` — absolute path (Unix/Mac)
 
 **PostgreSQL**:
-* `"postgresql://user:password@host/database_name"  # Standard Postgres dialect`
-* `"psycopg2+postgresql://user:password@host/database_name"  # with psycopg2 driver`
+* `"postgresql://user:password@host/database_name"`
+* `"postgresql+psycopg2://user:password@host/database_name"` — with psycopg2 driver
 
-SQLAlchemy's [engine documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html)
-has additional details about the dialects it supports.
+See SQLAlchemy's [engine documentation](https://docs.sqlalchemy.org/en/20/core/engines.html)
+for all supported dialects.

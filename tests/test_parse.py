@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import unittest
+import pytest
 import pandas as pd
 
 from pygameday import parse
@@ -66,95 +64,93 @@ def _make_pitch_row(**kwargs):
     return defaults
 
 
-class TestParseGames(unittest.TestCase):
+# ---------------------------------------------------------------------------
+# parse_games
+# ---------------------------------------------------------------------------
 
-    def _df(self, rows):
-        return pd.DataFrame(rows)
-
-    def test_parse_single_game(self):
-        df = self._df([_make_pitch_row()])
-        games = parse.parse_games(df)
-        self.assertEqual(len(games), 1)
-        g = games[0]
-        self.assertIsInstance(g, Game)
-        self.assertEqual(g.game_pk, 748532)
-        self.assertEqual(g.home_team, 'LAA')
-        self.assertEqual(g.away_team, 'HOU')
-        self.assertEqual(g.game_type, 'R')
-
-    def test_parse_two_games(self):
-        rows = [_make_pitch_row(game_pk=1), _make_pitch_row(game_pk=2)]
-        games = parse.parse_games(self._df(rows))
-        self.assertEqual(len(games), 2)
+def test_parse_single_game():
+    df = pd.DataFrame([_make_pitch_row()])
+    games = parse.parse_games(df)
+    assert len(games) == 1
+    g = games[0]
+    assert isinstance(g, Game)
+    assert g.game_pk == 748532
+    assert g.home_team == 'LAA'
+    assert g.away_team == 'HOU'
+    assert g.game_type == 'R'
 
 
-class TestParsePlayers(unittest.TestCase):
-
-    def test_pitcher_has_name(self):
-        df = pd.DataFrame([_make_pitch_row()])
-        players = parse.parse_players(df)
-        pitcher = next(p for p in players if p.player_id == 543037)
-        self.assertEqual(pitcher.last, 'Kershaw')
-        self.assertEqual(pitcher.first, 'Clayton')
-        self.assertEqual(pitcher.throws, 'L')
-
-    def test_batter_without_name(self):
-        df = pd.DataFrame([_make_pitch_row()])
-        players = parse.parse_players(df)
-        batter = next((p for p in players if p.player_id == 660271), None)
-        self.assertIsNotNone(batter)
-        self.assertEqual(batter.bats, 'R')
-
-    def test_no_duplicate_players(self):
-        rows = [_make_pitch_row(), _make_pitch_row()]  # same batter/pitcher twice
-        players = parse.parse_players(pd.DataFrame(rows))
-        ids = [p.player_id for p in players]
-        self.assertEqual(len(ids), len(set(ids)))
+def test_parse_two_games():
+    df = pd.DataFrame([_make_pitch_row(game_pk=1), _make_pitch_row(game_pk=2)])
+    assert len(parse.parse_games(df)) == 2
 
 
-class TestParseAtBats(unittest.TestCase):
+# ---------------------------------------------------------------------------
+# parse_players
+# ---------------------------------------------------------------------------
 
-    def test_single_at_bat_three_pitches(self):
-        rows = [
-            _make_pitch_row(at_bat_number=1, pitch_number=1, type='B', events=float('nan')),
-            _make_pitch_row(at_bat_number=1, pitch_number=2, type='S', events=float('nan')),
-            _make_pitch_row(at_bat_number=1, pitch_number=3, type='S', events='strikeout'),
-        ]
-        df = pd.DataFrame(rows)
-        at_bats = parse.parse_at_bats(df)
-        self.assertEqual(len(at_bats), 1)
-        ab = at_bats[0]
-        self.assertIsInstance(ab, AtBat)
-        self.assertEqual(ab.n_pitches, 3)
-        self.assertEqual(ab.events, 'strikeout')
-        self.assertEqual(len(ab.pitches), 3)
-        for i, p in enumerate(ab.pitches):
-            self.assertEqual(p.at_bat_pitch_num, i)
+def test_pitcher_has_name():
+    players = parse.parse_players(pd.DataFrame([_make_pitch_row()]))
+    pitcher = next(p for p in players if p.player_id == 543037)
+    assert pitcher.last == 'Kershaw'
+    assert pitcher.first == 'Clayton'
+    assert pitcher.throws == 'L'
 
 
-class TestParseHitsInPlay(unittest.TestCase):
-
-    def test_only_in_play_rows_extracted(self):
-        rows = [
-            _make_pitch_row(type='B'),
-            _make_pitch_row(type='S'),
-            _make_pitch_row(type='X', bb_type='fly_ball',
-                            hc_x=110.0, hc_y=85.0,
-                            launch_speed=104.5, launch_angle=27.0),
-        ]
-        df = pd.DataFrame(rows)
-        hips = parse.parse_hits_in_play(df)
-        self.assertEqual(len(hips), 1)
-        h = hips[0]
-        self.assertIsInstance(h, HitInPlay)
-        self.assertEqual(h.bb_type, 'fly_ball')
-        self.assertAlmostEqual(h.launch_speed, 104.5)
-
-    def test_no_in_play_rows(self):
-        rows = [_make_pitch_row(type='B'), _make_pitch_row(type='S')]
-        hips = parse.parse_hits_in_play(pd.DataFrame(rows))
-        self.assertEqual(len(hips), 0)
+def test_batter_without_name():
+    players = parse.parse_players(pd.DataFrame([_make_pitch_row()]))
+    batter = next((p for p in players if p.player_id == 660271), None)
+    assert batter is not None
+    assert batter.bats == 'R'
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_no_duplicate_players():
+    players = parse.parse_players(pd.DataFrame([_make_pitch_row(), _make_pitch_row()]))
+    ids = [p.player_id for p in players]
+    assert len(ids) == len(set(ids))
+
+
+# ---------------------------------------------------------------------------
+# parse_at_bats
+# ---------------------------------------------------------------------------
+
+def test_single_at_bat_three_pitches():
+    rows = [
+        _make_pitch_row(at_bat_number=1, pitch_number=1, type='B', events=float('nan')),
+        _make_pitch_row(at_bat_number=1, pitch_number=2, type='S', events=float('nan')),
+        _make_pitch_row(at_bat_number=1, pitch_number=3, type='S', events='strikeout'),
+    ]
+    at_bats = parse.parse_at_bats(pd.DataFrame(rows))
+    assert len(at_bats) == 1
+    ab = at_bats[0]
+    assert isinstance(ab, AtBat)
+    assert ab.n_pitches == 3
+    assert ab.events == 'strikeout'
+    assert len(ab.pitches) == 3
+    for i, p in enumerate(ab.pitches):
+        assert p.at_bat_pitch_num == i
+
+
+# ---------------------------------------------------------------------------
+# parse_hits_in_play
+# ---------------------------------------------------------------------------
+
+def test_only_in_play_rows_extracted():
+    rows = [
+        _make_pitch_row(type='B'),
+        _make_pitch_row(type='S'),
+        _make_pitch_row(type='X', bb_type='fly_ball',
+                        hc_x=110.0, hc_y=85.0,
+                        launch_speed=104.5, launch_angle=27.0),
+    ]
+    hips = parse.parse_hits_in_play(pd.DataFrame(rows))
+    assert len(hips) == 1
+    h = hips[0]
+    assert isinstance(h, HitInPlay)
+    assert h.bb_type == 'fly_ball'
+    assert h.launch_speed == pytest.approx(104.5)
+
+
+def test_no_in_play_rows():
+    rows = [_make_pitch_row(type='B'), _make_pitch_row(type='S')]
+    assert parse.parse_hits_in_play(pd.DataFrame(rows)) == []

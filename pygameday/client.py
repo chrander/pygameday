@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Defines GameDayClient, the primary class for ingesting MLB Statcast data."""
+"""Defines StatcastClient, the primary class for ingesting MLB Statcast data."""
 import logging
 from datetime import timedelta
 
@@ -16,7 +16,7 @@ from .models import Game, Player, AtBat, Pitch, HitInPlay, create_db_tables, db_
 logger = logging.getLogger(__name__)
 
 
-class GameDayClient:
+class StatcastClient:
     """Ingests MLB Statcast data (via pybaseball) into a SQLAlchemy-backed database."""
 
     def __init__(self, database_uri, ingest_spring_training=False):
@@ -32,7 +32,7 @@ class GameDayClient:
         """
         engine = db_connect(database_uri)
         create_db_tables(engine)
-        logger.info("Initialized GameDayClient using '%s'", database_uri)
+        logger.info("Initialized StatcastClient using '%s'", database_uri)
 
         self.database_uri = database_uri
         self.ingest_spring_training = ingest_spring_training

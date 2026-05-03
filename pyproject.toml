@@ -35,4 +35,5 @@ include = ["pygameday*"]
 dev = [
     "twine",
     "build",
+    "pytest",
 ]

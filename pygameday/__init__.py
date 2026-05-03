@@ -6,9 +6,9 @@ import os
 
 from .constants import (LOG_LEVEL, LOG_FOLDER, LOG_FORMAT_CONSOLE, LOG_FORMAT_FILE, LOG_FORMAT_TIME,
                         LOG_BACKUP_COUNT, LOG_FILE_MAX_BYTES)
-from .client import GameDayClient
+from .client import StatcastClient
 
-__all__ = ['GameDayClient']
+__all__ = ['StatcastClient']
 
 file_handler_name = 'FileHandler'
 stream_handler_name = 'StreamHandler'
