@@ -24,16 +24,16 @@ def fetch_statcast_data(start_date, end_date):
     """
     start_str = start_date.strftime('%Y-%m-%d')
     end_str = end_date.strftime('%Y-%m-%d')
-    logger.debug('Fetching Statcast data from %s to %s', start_str, end_str)
+    logger.debug(f'Fetching Statcast data from {start_str} to {end_str}')
 
     try:
         df = pybaseball.statcast(start_dt=start_str, end_dt=end_str, verbose=False)
     except Exception:
-        logger.exception('Error fetching Statcast data for %s to %s', start_str, end_str)
+        logger.exception(f'Error fetching Statcast data for {start_str} to {end_str}')
         return None
 
     if df is None or df.empty:
-        logger.warning('No Statcast data returned for %s to %s', start_str, end_str)
+        logger.warning(f'No Statcast data returned for {start_str} to {end_str}')
         return None
 
     return df
